@@ -34,28 +34,117 @@ export default function LoginPage() {
 
     router.push("/home");
   };
+
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden">
+    <div
+      className="min-h-screen flex text-white overflow-hidden"
+      style={{ background: "#0F0F13" }}
+    >
       {/* BACKGROUND GLOW */}
-      <div className="absolute w-[500px] h-[500px] bg-indigo-500/30 blur-3xl rounded-full top-10 left-10"></div>
-      <div className="absolute w-[500px] h-[500px] bg-purple-500/20 blur-3xl rounded-full bottom-10 right-10"></div>
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: "520px",
+          height: "520px",
+          background:
+            "radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)",
+          top: "-60px",
+          left: "-60px",
+          filter: "blur(40px)",
+        }}
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: "480px",
+          height: "480px",
+          background:
+            "radial-gradient(circle, rgba(167,139,250,0.12) 0%, transparent 70%)",
+          bottom: "-80px",
+          right: "-60px",
+          filter: "blur(40px)",
+        }}
+      />
 
       {/* LEFT SIDE */}
       <div className="hidden md:flex w-1/2 items-center justify-center relative">
         <div className="text-center max-w-md px-10">
-          <h1 className="text-6xl font-extrabold tracking-tight">
-            SocialSphere
+          {/* Logo mark */}
+          <div className="flex justify-center mb-6">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{
+                background: "rgba(124,58,237,0.2)",
+                border: "1px solid rgba(124,58,237,0.4)",
+              }}
+            >
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <circle cx="10" cy="10" r="5" fill="#7C3AED" />
+                <circle cx="22" cy="10" r="5" fill="#A78BFA" opacity="0.7" />
+                <circle cx="16" cy="22" r="5" fill="#7C3AED" opacity="0.5" />
+              </svg>
+            </div>
+          </div>
+
+          <h1
+            className="text-6xl font-extrabold tracking-tight"
+            style={{ color: "#F4F4F5" }}
+          >
+            Social<span style={{ color: "#A78BFA" }}>Sphere</span>
           </h1>
 
-          <p className="mt-5 text-white/60 text-lg leading-relaxed">
+          <p
+            className="mt-5 text-lg leading-relaxed"
+            style={{ color: "rgba(244,244,245,0.5)" }}
+          >
             Connect, share, and grow with people around the world in a modern
             social experience.
           </p>
 
+          {/* Animated dots */}
           <div className="mt-10 flex justify-center gap-2">
-            <span className="w-3 h-3 bg-indigo-400 rounded-full animate-pulse"></span>
-            <span className="w-3 h-3 bg-purple-400 rounded-full animate-pulse delay-150"></span>
-            <span className="w-3 h-3 bg-pink-400 rounded-full animate-pulse delay-300"></span>
+            <span
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ background: "#7C3AED" }}
+            />
+            <span
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ background: "#A78BFA", animationDelay: "150ms" }}
+            />
+            <span
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{
+                background: "rgba(167,139,250,0.4)",
+                animationDelay: "300ms",
+              }}
+            />
+          </div>
+
+          {/* Stat pills */}
+          <div className="mt-10 flex justify-center gap-4">
+            {[
+              { label: "Users", value: "2M+" },
+              { label: "Posts", value: "10M+" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="px-5 py-3 rounded-2xl text-center"
+                style={{
+                  background: "rgba(124,58,237,0.1)",
+                  border: "1px solid rgba(124,58,237,0.25)",
+                }}
+              >
+                <p className="text-xl font-bold" style={{ color: "#A78BFA" }}>
+                  {s.value}
+                </p>
+                <p
+                  className="text-xs mt-0.5"
+                  style={{ color: "rgba(244,244,245,0.45)" }}
+                >
+                  {s.label}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -63,62 +152,172 @@ export default function LoginPage() {
       {/* RIGHT SIDE */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-6 relative">
         <div className="w-full max-w-md">
-          {/* GLASS CARD */}
-          <div className="backdrop-blur-2xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
-            <h2 className="text-3xl font-bold text-center">Welcome Back</h2>
+          {/* CARD */}
+          <div
+            className="rounded-3xl p-8"
+            style={{
+              background: "#1A1A24",
+              border: "1px solid rgba(124,58,237,0.2)",
+              boxShadow: "0 0 40px rgba(124,58,237,0.07)",
+            }}
+          >
+            {/* Mobile logo */}
+            <div className="flex md:hidden justify-center mb-6">
+              <span
+                className="text-2xl font-extrabold"
+                style={{ color: "#F4F4F5" }}
+              >
+                Social<span style={{ color: "#A78BFA" }}>Sphere</span>
+              </span>
+            </div>
 
-            <p className="text-center text-white/60 mt-2">
+            <h2
+              className="text-3xl font-bold text-center"
+              style={{ color: "#F4F4F5" }}
+            >
+              Welcome back
+            </h2>
+
+            <p
+              className="text-center mt-2 text-sm"
+              style={{ color: "#9CA3AF" }}
+            >
               Sign in to continue
             </p>
 
-            {/* ERROR MESSAGE */}
+            {/* DIVIDER */}
+            <div
+              className="mt-6 mb-6 h-px"
+              style={{ background: "rgba(124,58,237,0.2)" }}
+            />
+
+            {/* ERROR */}
             {error && (
-              <p className="mt-4 text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 p-2 rounded-lg">
+              <p
+                className="mb-5 text-sm text-center p-3 rounded-xl"
+                style={{
+                  color: "#f87171",
+                  background: "rgba(239,68,68,0.08)",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                }}
+              >
                 {error}
               </p>
             )}
 
             {/* FORM */}
-            <form className="mt-6 space-y-5" onSubmit={handleLogin}>
+            <form className="space-y-4" onSubmit={handleLogin}>
               {/* EMAIL */}
-              <input
-                type="email"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-              />
+              <div>
+                <label
+                  className="block text-xs font-medium mb-1.5"
+                  style={{ color: "#9CA3AF" }}
+                >
+                  Email address
+                </label>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl text-sm transition"
+                  style={{
+                    background: "rgba(124,58,237,0.06)",
+                    border: "1px solid rgba(124,58,237,0.2)",
+                    color: "#F4F4F5",
+                    outline: "none",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.border = "1px solid rgba(124,58,237,0.6)";
+                    e.target.style.boxShadow =
+                      "0 0 0 3px rgba(124,58,237,0.12)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.border = "1px solid rgba(124,58,237,0.2)";
+                    e.target.style.boxShadow = "none";
+                  }}
+                />
+              </div>
 
               {/* PASSWORD */}
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
-              />
+              <div>
+                <label
+                  className="block text-xs font-medium mb-1.5"
+                  style={{ color: "#9CA3AF" }}
+                >
+                  Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl text-sm transition"
+                  style={{
+                    background: "rgba(124,58,237,0.06)",
+                    border: "1px solid rgba(124,58,237,0.2)",
+                    color: "#F4F4F5",
+                    outline: "none",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.border = "1px solid rgba(167,139,250,0.6)";
+                    e.target.style.boxShadow =
+                      "0 0 0 3px rgba(167,139,250,0.1)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.border = "1px solid rgba(124,58,237,0.2)";
+                    e.target.style.boxShadow = "none";
+                  }}
+                />
+              </div>
 
               {/* BUTTON */}
               <button
                 type="submit"
                 disabled={!email || !password}
-                className={`w-full py-3 rounded-xl font-semibold transition active:scale-[0.99]
-                  ${
-                    !email || !password
-                      ? "bg-gradient-to-r from-indigo-900/40 via-purple-900/40 to-pink-900/40 cursor-not-allowed opacity-60"
-                      : "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90"
-                  }`}
+                className="w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-[0.99] mt-2"
+                style={
+                  !email || !password
+                    ? {
+                        background: "rgba(124,58,237,0.15)",
+                        color: "rgba(167,139,250,0.4)",
+                        cursor: "not-allowed",
+                        border: "1px solid rgba(124,58,237,0.15)",
+                      }
+                    : {
+                        background: "#7C3AED",
+                        color: "#F4F4F5",
+                        border: "1px solid rgba(167,139,250,0.3)",
+                        boxShadow: "0 4px 20px rgba(124,58,237,0.35)",
+                      }
+                }
+                onMouseEnter={(e) => {
+                  if (email && password) {
+                    (e.target as HTMLButtonElement).style.background =
+                      "#6D28D9";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (email && password) {
+                    (e.target as HTMLButtonElement).style.background =
+                      "#7C3AED";
+                  }
+                }}
               >
                 Sign In
               </button>
             </form>
 
             {/* FOOTER */}
-            <p className="text-sm text-center text-gray-400 mt-6">
-              Don’t have an account?{" "}
+            <p
+              className="text-sm text-center mt-6"
+              style={{ color: "#9CA3AF" }}
+            >
+              Don&apos;t have an account?{" "}
               <span
                 onClick={() => router.push("/signup")}
-                className="text-indigo-400 cursor-pointer hover:underline"
+                className="cursor-pointer hover:underline font-medium"
+                style={{ color: "#A78BFA" }}
               >
                 Sign up
               </span>

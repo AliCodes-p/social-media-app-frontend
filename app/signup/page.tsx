@@ -27,92 +27,189 @@ export default function SignupPage() {
     router.push("/home");
   };
 
+  const inputStyle = {
+    width: "100%",
+    padding: "10px 16px",
+    borderRadius: "12px",
+    background: "rgba(124,58,237,0.06)",
+    border: "1px solid rgba(124,58,237,0.2)",
+    color: "#F4F4F5",
+    fontSize: "14px",
+    outline: "none",
+    transition: "border 0.2s, box-shadow 0.2s",
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.border = "1px solid rgba(124,58,237,0.6)";
+    e.target.style.boxShadow = "0 0 0 3px rgba(124,58,237,0.12)";
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.border = "1px solid rgba(124,58,237,0.2)";
+    e.target.style.boxShadow = "none";
+  };
+
   return (
-    <div className="min-h-screen w-full flex bg-[#030712] text-slate-200 antialiased font-sans">
-      {/* LEFT SIDE - HERO BRANDING WITH HIGH-END GLOW ORBS */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center p-16 relative overflow-hidden bg-[#030712]">
-        {/* Deep Purple & Blue Ambient Background Orbs */}
-        <div className="absolute w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] -top-32 -left-20 pointer-events-none" />
-        <div className="absolute w-[450px] h-[450px] bg-[#d946ef]/10 rounded-full blur-[130px] bottom-12 right-0 pointer-events-none" />
-        <div className="absolute w-[300px] h-[300px] bg-purple-600/15 rounded-full blur-[90px] top-1/3 left-1/4 pointer-events-none" />
+    <div
+      className="min-h-screen w-full flex text-white antialiased font-sans"
+      style={{ background: "#0F0F13" }}
+    >
+      {/* LEFT SIDE */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center p-16 relative overflow-hidden">
+        {/* Glow orbs */}
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: "500px",
+            height: "500px",
+            background:
+              "radial-gradient(circle, rgba(124,58,237,0.16) 0%, transparent 70%)",
+            top: "-100px",
+            left: "-80px",
+            filter: "blur(40px)",
+          }}
+        />
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: "400px",
+            height: "400px",
+            background:
+              "radial-gradient(circle, rgba(167,139,250,0.1) 0%, transparent 70%)",
+            bottom: "40px",
+            right: "0px",
+            filter: "blur(40px)",
+          }}
+        />
 
         <div className="relative z-10 max-w-md space-y-6">
-          {/* Subtle Tag */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-400/20 text-indigo-400 text-xs font-medium tracking-wide">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+          {/* Tag */}
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium"
+            style={{
+              background: "rgba(124,58,237,0.12)",
+              border: "1px solid rgba(124,58,237,0.3)",
+              color: "#A78BFA",
+            }}
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{ background: "#A78BFA" }}
+            />
             Version 2.0 Live
           </div>
 
-          {/* Heading */}
-          <h1 className="text-5xl font-extrabold tracking-tight text-white drop-shadow-sm">
-            SocialSphere
-          </h1>
+          {/* Logo mark */}
+          <div className="flex items-center gap-3">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: "rgba(124,58,237,0.18)",
+                border: "1px solid rgba(124,58,237,0.35)",
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+                <circle cx="10" cy="10" r="5" fill="#7C3AED" />
+                <circle cx="22" cy="10" r="5" fill="#A78BFA" opacity="0.7" />
+                <circle cx="16" cy="22" r="5" fill="#7C3AED" opacity="0.5" />
+              </svg>
+            </div>
+            <h1
+              className="text-5xl font-extrabold tracking-tight"
+              style={{ color: "#F4F4F5" }}
+            >
+              Social<span style={{ color: "#A78BFA" }}>Sphere</span>
+            </h1>
+          </div>
 
           {/* Description */}
-          <p className="text-slate-400 text-lg font-light leading-relaxed">
+          <p
+            className="text-lg font-light leading-relaxed"
+            style={{ color: "rgba(244,244,245,0.5)" }}
+          >
             A modern, high-performance ecosystem to seamlessly connect,
             orchestrate ideas, and securely cultivate your global digital
             identity.
           </p>
 
-          {/* Quick Stats Grid */}
-          <div className="pt-8 border-t border-slate-800/60 flex justify-between items-center gap-4">
-            <div>
-              <p className="text-xl font-bold text-white tracking-tight">
-                99.9%
-              </p>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Uptime SLA
-              </p>
-            </div>
-            <div>
-              <p className="text-xl font-bold text-white tracking-tight">
-                AES-256
-              </p>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Encryption
-              </p>
-            </div>
-            <div>
-              <p className="text-xl font-bold text-white tracking-tight">
-                10M+
-              </p>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Global Nodes
-              </p>
-            </div>
+          {/* Stats */}
+          <div
+            className="pt-6 flex justify-between items-center gap-4"
+            style={{ borderTop: "1px solid rgba(124,58,237,0.2)" }}
+          >
+            {[
+              { value: "99.9%", label: "Uptime SLA" },
+              { value: "AES-256", label: "Encryption" },
+              { value: "10M+", label: "Global Nodes" },
+            ].map((s) => (
+              <div key={s.label}>
+                <p className="text-xl font-bold" style={{ color: "#F4F4F5" }}>
+                  {s.value}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>
+                  {s.label}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* RIGHT SIDE - TRANSPARENT SIGN UP SURFACE CONTAINER */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 relative bg-[#030712]">
-        {/* Background glow behind card for consistency */}
-        <div className="absolute w-[350px] h-[350px] bg-purple-600/10 rounded-full blur-[100px] bottom-10 right-10 pointer-events-none" />
+      {/* RIGHT SIDE */}
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 relative">
+        {/* Background glow */}
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: "350px",
+            height: "350px",
+            background:
+              "radial-gradient(circle, rgba(124,58,237,0.1) 0%, transparent 70%)",
+            bottom: "40px",
+            right: "40px",
+            filter: "blur(40px)",
+          }}
+        />
 
-        {/* Mobile Header Title */}
+        {/* Mobile title */}
         <div className="lg:hidden mb-8 text-center">
-          <h1 className="text-3xl font-black tracking-tight text-white">
-            SocialSphere
+          <h1 className="text-3xl font-black tracking-tight">
+            Social<span style={{ color: "#A78BFA" }}>Sphere</span>
           </h1>
         </div>
 
-        {/* Glassmorphism Surface Card Container */}
-        <div className="w-full max-w-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 sm:p-10 shadow-2xl backdrop-blur-xl">
-          <div className="text-center space-y-1.5 mb-6">
-            <h2 className="text-2xl font-bold text-white tracking-tight">
-              Create Account
+        {/* CARD */}
+        <div
+          className="w-full max-w-md rounded-3xl p-8 sm:p-10"
+          style={{
+            background: "#1A1A24",
+            border: "1px solid rgba(124,58,237,0.2)",
+            boxShadow: "0 0 40px rgba(124,58,237,0.07)",
+          }}
+        >
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold" style={{ color: "#F4F4F5" }}>
+              Create account
             </h2>
-            <p className="text-slate-400 text-sm font-light">
+            <p className="text-sm mt-1" style={{ color: "#9CA3AF" }}>
               Sign up to get started with your new profile
             </p>
           </div>
 
+          {/* Divider */}
+          <div
+            className="mb-6 h-px"
+            style={{ background: "rgba(124,58,237,0.2)" }}
+          />
+
           <form onSubmit={handleSignup} className="space-y-4">
-            {/* Full Name Input */}
+            {/* Full Name */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Full Name
+              <label
+                className="block text-xs font-medium"
+                style={{ color: "#9CA3AF" }}
+              >
+                Full name
               </label>
               <input
                 type="text"
@@ -121,14 +218,19 @@ export default function SignupPage() {
                 placeholder="John Doe"
                 value={form.name}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950/60 text-white placeholder-slate-600 border border-slate-800 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all text-sm"
+                style={inputStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </div>
 
-            {/* Email Address Input */}
+            {/* Email */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Email Address
+              <label
+                className="block text-xs font-medium"
+                style={{ color: "#9CA3AF" }}
+              >
+                Email address
               </label>
               <input
                 type="email"
@@ -137,13 +239,18 @@ export default function SignupPage() {
                 placeholder="name@company.com"
                 value={form.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950/60 text-white placeholder-slate-600 border border-slate-800 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all text-sm"
+                style={inputStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </div>
 
-            {/* Password Input */}
+            {/* Password */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <label
+                className="block text-xs font-medium"
+                style={{ color: "#9CA3AF" }}
+              >
                 Password
               </label>
               <input
@@ -153,14 +260,19 @@ export default function SignupPage() {
                 placeholder="••••••••"
                 value={form.password}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950/60 text-white placeholder-slate-600 border border-slate-800 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all text-sm"
+                style={inputStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </div>
 
-            {/* Confirm Password Input */}
+            {/* Confirm Password */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Confirm Password
+              <label
+                className="block text-xs font-medium"
+                style={{ color: "#9CA3AF" }}
+              >
+                Confirm password
               </label>
               <input
                 type="password"
@@ -169,44 +281,83 @@ export default function SignupPage() {
                 placeholder="••••••••"
                 value={form.confirmPassword}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950/60 text-white placeholder-slate-600 border border-slate-800 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all text-sm"
+                style={inputStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </div>
 
-            {/* Submit Button - Vibrant Blue to Magenta Gradient */}
+            {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-500 to-magenta-500 bg-[linear-gradient(90deg,#4f46e5_0%,#d946ef_100%)] hover:opacity-95 active:scale-[0.99] text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/20 mt-4 block text-center cursor-pointer"
+              className="w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-[0.99] mt-2 cursor-pointer"
+              style={{
+                background: "#7C3AED",
+                color: "#F4F4F5",
+                border: "1px solid rgba(167,139,250,0.3)",
+                boxShadow: "0 4px 20px rgba(124,58,237,0.35)",
+              }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.background = "#6D28D9";
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.background = "#7C3AED";
+              }}
             >
               Get Started Now
             </button>
           </form>
 
-          {/* Center Divider Text */}
+          {/* Divider */}
           <div className="flex items-center my-5 w-full">
-            <div className="flex-1 h-px bg-slate-800/80"></div>
-            <span className="px-3 text-slate-500 text-xs font-semibold uppercase tracking-widest">
+            <div
+              className="flex-1 h-px"
+              style={{ background: "rgba(124,58,237,0.15)" }}
+            />
+            <span
+              className="px-3 text-xs font-medium"
+              style={{ color: "#9CA3AF" }}
+            >
               or
             </span>
-            <div className="flex-1 h-px bg-slate-800/80"></div>
+            <div
+              className="flex-1 h-px"
+              style={{ background: "rgba(124,58,237,0.15)" }}
+            />
           </div>
 
-          {/* Social Buttons Authentication Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <button className="w-full py-2.5 px-4 rounded-xl bg-slate-950/40 border border-slate-800 text-slate-300 hover:bg-slate-900/60 text-sm font-medium transition-all cursor-pointer">
-              Google
-            </button>
-            <button className="w-full py-2.5 px-4 rounded-xl bg-slate-950/40 border border-slate-800 text-slate-300 hover:bg-slate-900/60 text-sm font-medium transition-all cursor-pointer">
-              GitHub
-            </button>
+          {/* Social buttons */}
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            {["Google", "GitHub"].map((provider) => (
+              <button
+                key={provider}
+                className="py-2.5 px-4 rounded-xl text-sm font-medium transition-all cursor-pointer"
+                style={{
+                  background: "rgba(124,58,237,0.06)",
+                  border: "1px solid rgba(124,58,237,0.2)",
+                  color: "#F4F4F5",
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLButtonElement).style.background =
+                    "rgba(124,58,237,0.14)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.background =
+                    "rgba(124,58,237,0.06)";
+                }}
+              >
+                {provider}
+              </button>
+            ))}
           </div>
 
-          {/* Sign In Redirection Footer Link */}
-          <p className="text-center text-slate-500 text-sm font-light">
+          {/* Footer */}
+          <p className="text-center text-sm" style={{ color: "#9CA3AF" }}>
             Already have an account?{" "}
             <span
               onClick={() => router.push("/login")}
-              className="text-indigo-400 font-medium cursor-pointer hover:underline transition-all"
+              className="font-medium cursor-pointer hover:underline"
+              style={{ color: "#A78BFA" }}
             >
               Sign in
             </span>
