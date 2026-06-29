@@ -2,15 +2,19 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { verifyOtp, resendOtp, verifyResetOtp, forgotPassword } from "@/lib/api";
+import {
+  verifyOtp,
+  resendOtp,
+  verifyResetOtp,
+  forgotPassword,
+} from "@/lib/api";
 import { otpSchema } from "@/schemas/auth";
 
 export default function OtpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
-  const mode = searchParams.get("mode") as "register" | "login" | "reset" | null;
-
+  const mode = searchParams.get("mode") as "register" | "reset" | null;
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -21,7 +25,7 @@ export default function OtpForm() {
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    if (!email || !mode || (mode !== "register" && mode !== "login" && mode !== "reset")) {
+    if (!email || !mode || (mode !== "register" && mode !== "reset")) {
       router.replace("/login");
     }
   }, [email, mode, router]);
@@ -91,7 +95,7 @@ export default function OtpForm() {
         const response = await verifyResetOtp(email, parsed.data.otp);
         router.push(`/reset-password?token=${response.reset_token}`);
       } else {
-        await verifyOtp(email, parsed.data.otp, mode);
+        await verifyOtp(email, parsed.data.otp, "register");
         router.push("/home");
       }
     } catch (err) {
@@ -110,7 +114,7 @@ export default function OtpForm() {
       if (mode === "reset") {
         await forgotPassword(email);
       } else {
-        await resendOtp(email, mode);
+        await resendOtp(email, "register");
       }
       setOtp(["", "", "", "", "", ""]);
       setCanResend(false);
@@ -221,11 +225,7 @@ export default function OtpForm() {
             className="text-[22px] font-bold text-center"
             style={{ color: "#18181B" }}
           >
-            {mode === "login"
-              ? "Verify your login"
-              : mode === "reset"
-                ? "Verify password reset"
-                : "Verify your email"}
+            {mode === "reset" ? "Verify password reset" : "Verify your email"}
           </h2>
 
           <p

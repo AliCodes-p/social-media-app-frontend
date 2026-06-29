@@ -42,7 +42,7 @@ export default function LoginPage() {
 
     try {
       await loginApi(data.email, data.password);
-      router.push(`/otp?email=${encodeURIComponent(data.email)}&mode=login`);
+      router.push("/home");
     } catch (err) {
       setApiError(err instanceof Error ? err.message : "Login failed");
     }

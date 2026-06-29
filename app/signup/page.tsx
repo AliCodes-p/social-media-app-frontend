@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { register as registerApi } from "@/lib/api";
 import { signupSchema, type SignupFormValues } from "@/schemas/auth";
+import { startOAuth, type OAuthProvider } from "@/lib/oauth";
 
 const errorTextStyle: React.CSSProperties = {
   color: "#dc2626",
@@ -579,6 +580,7 @@ export default function SignupPage() {
               {[
                 {
                   name: "Google",
+                  provider: "google",
                   icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24">
                       <path
@@ -602,6 +604,7 @@ export default function SignupPage() {
                 },
                 {
                   name: "GitHub",
+                  provider: "github",
                   icon: (
                     <svg
                       width="16"
@@ -616,12 +619,16 @@ export default function SignupPage() {
               ].map((provider) => (
                 <button
                   key={provider.name}
+                  type="button"
+                  onClick={() =>
+                    startOAuth(provider.provider as "google" | "github")
+                  }
                   className="social-btn py-2.5 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
                   style={{
                     background: "#fff",
                     border: "1.5px solid #E4E4E7",
                     color: "#18181B",
-                    cursor: "poinhter",
+                    cursor: "pointer",
                     transition: "background 0.15s, border-color 0.15s",
                   }}
                 >
