@@ -1,5 +1,3 @@
-import { useContext } from "react";
-import { UserContext } from "@/context/context";
 const users = {
   ali: { name: "ali", role: "Software Engineering Intern" },
   hassan: { name: "hassan", role: "Frontend Developer" },
