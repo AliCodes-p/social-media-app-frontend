@@ -14,7 +14,7 @@ export default function OtpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
-  const mode = searchParams.get("mode") as "register" | "reset" | null;
+  const purpose = searchParams.get("purpose") as "register" | "login" | null;
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -25,10 +25,10 @@ export default function OtpForm() {
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    if (!email || !mode || (mode !== "register" && mode !== "reset")) {
+    if (!email) {
       router.replace("/auth/login");
     }
-  }, [email, mode, router]);
+  }, [email, router]);
 
   useEffect(() => {
     inputs.current[0]?.focus();
@@ -78,7 +78,7 @@ export default function OtpForm() {
 
   const handleVerify = async () => {
     const code = otp.join("");
-    if (!email || !mode) return;
+    if (!email) return;
 
     setError("");
 
@@ -91,9 +91,9 @@ export default function OtpForm() {
     setIsLoading(true);
 
     try {
-      if (mode === "reset") {
-        const response = await verifyResetOtp(email, parsed.data.otp);
-        router.push(`/reset-password?token=${response.reset_token}`);
+      if (purpose === "login") {
+        await verifyOtp(email, parsed.data.otp, "login");
+        router.push("/home");
       } else {
         await verifyOtp(email, parsed.data.otp, "register");
         router.push("/home");
@@ -106,16 +106,12 @@ export default function OtpForm() {
   };
 
   const handleResend = async () => {
-    if (!canResend || !email || !mode) return;
+    if (!canResend || !email) return;
 
     setError("");
 
     try {
-      if (mode === "reset") {
-        await forgotPassword(email);
-      } else {
-        await resendOtp(email, "register");
-      }
+      await resendOtp(email, purpose ?? "register");
       setOtp(["", "", "", "", "", ""]);
       setCanResend(false);
       setResendTimer(30);
@@ -142,7 +138,7 @@ export default function OtpForm() {
     </svg>
   );
 
-  if (!email || !mode) {
+  if (!email) {
     return null;
   }
 
@@ -225,7 +221,7 @@ export default function OtpForm() {
             className="text-[22px] font-bold text-center"
             style={{ color: "#18181B" }}
           >
-            {mode === "reset" ? "Verify password reset" : "Verify your email"}
+            Verify your email
           </h2>
 
           <p

@@ -175,7 +175,7 @@ export default function ForgotPasswordPage() {
             <p className="text-sm mt-1.5" style={{ color: "#6b7280" }}>
               Remembered it?{" "}
               <span
-                onClick={() => router.push("/login")}
+                onClick={() => router.push("/auth/login")}
                 className="cursor-pointer hover:underline font-medium"
                 style={{ color: "#7C3AED" }}
               >

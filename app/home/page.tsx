@@ -1,111 +1,481 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  getFeed,
+  FeedPost,
+  getcurrentUser,
+  getAllUsers,
+  UserCardResponse,
+  likePost,
+  unlikePost,
+  sharePost,
+  unsharePost,
+  archivePost,
+  unarchivePost,
+  deletePost,
+  updatePost,
+  getComments,
+  createComment,
+  updateComment,
+  deleteComment,
+  createPost,
+  createPostWithImage,
+} from "@/lib/api";
+import {
+  feedPostToPost,
+  buildUsersMap,
+  extractHashtags,
+} from "@/lib/postUtils";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUser, logout, refreshSession } from "@/lib/api";
+import Sidebar from "@/components/Sidebar";
+import RightSidebar from "@/components/RightSidebar";
+import PostComposer from "@/components/PostComposer";
+import PostCard from "@/components/PostCard";
+import ExploreTab from "@/components/ExploreTab";
+import NotificationsTab from "@/components/NotificationsTab";
+import MessagesTab from "@/components/MessagesTab";
+import { Post, Comment } from "@/lib/types";
 
 export default function HomePage() {
   const router = useRouter();
-  const [user, setUser] = useState<{
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [currentUser, setCurrentUser] = useState<{
+    id: number;
     username: string;
-    email: string;
   } | null>(null);
+  const [usersMap, setUsersMap] = useState<Record<number, UserCardResponse>>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
-  const [loggingOut, setLoggingOut] = useState(false);
-  const [error, setError] = useState("");
+  const [activeNav, setActiveNav] = useState("Home");
+  const [toast, setToast] = useState<string | null>(null);
+  const [trendingTopics, setTrendingTopics] = useState<
+    { tag: string; posts: string }[]
+  >([]);
+  const [suggestedUsers, setSuggestedUsers] = useState<UserCardResponse[]>([]);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2200);
+  };
+
+  const refreshFeed = async () => {
+    if (!currentUser) return;
+
+    const feed = await getFeed();
+
+    setPosts(
+      feed.map((post) => feedPostToPost(post, usersMap, currentUser.id)),
+    );
+  };
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadUser() {
+    const initPage = async () => {
       try {
-        const data = await getCurrentUser();
-        if (isMounted) {
-          setUser({ username: data.username, email: data.email });
+        // Fetch current user
+        const me = await getcurrentUser().catch(() => null);
+        if (!me) {
+          router.replace("/auth/login");
+          return;
         }
-      } catch {
-        try {
-          await refreshSession();
-          const data = await getCurrentUser();
-          if (isMounted) {
-            setUser({ username: data.username, email: data.email });
-          }
-        } catch {
-          if (isMounted) {
-            router.replace("/login");
-          }
-        }
+        setCurrentUser(me);
+
+        // Fetch users to resolve names/avatars
+        const users = await getAllUsers().catch(() => [] as UserCardResponse[]);
+        const lookup = buildUsersMap(users);
+        setUsersMap(lookup);
+
+        setSuggestedUsers(users.filter((u) => u.id !== me.id).slice(0, 3));
+
+        // Fetch feed
+        const feed = await getFeed().catch(() => [] as FeedPost[]);
+        setTrendingTopics(
+          extractHashtags(feed).map(({ tag, count }) => ({
+            tag,
+            posts: `${count} post${count !== 1 ? "s" : ""}`,
+          })),
+        );
+        const mapped = feed.map((post) => feedPostToPost(post, lookup, me.id));
+        setPosts(mapped);
+      } catch (error) {
+        console.error("Failed to load feed:", error);
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
-    }
-
-    loadUser();
-
-    return () => {
-      isMounted = false;
     };
+
+    initPage();
   }, [router]);
 
-  const handleLogout = async () => {
-    setError("");
-    setLoggingOut(true);
+  useEffect(() => {
+    const syncTabFromUrl = () => {
+      if (window.location.pathname !== "/home") return;
+      const tab =
+        new URLSearchParams(window.location.search).get("tab") ?? "Home";
+      setActiveNav(tab);
+    };
+
+    syncTabFromUrl();
+    window.addEventListener("popstate", syncTabFromUrl);
+    return () => window.removeEventListener("popstate", syncTabFromUrl);
+  }, []);
+
+  const visiblePosts =
+    activeNav === "Archived"
+      ? posts.filter((p) => p.archived)
+      : posts.filter((p) => !p.archived);
+
+  const toggleLike = async (id: string) => {
+    const post = posts.find((p) => p.id === id);
+    if (!post) return;
 
     try {
-      await logout();
-      setUser(null);
-      router.replace("/login");
+      if (post.liked) {
+        await unlikePost(Number(id));
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? { ...p, liked: false, likes: Math.max(0, p.likes - 1) }
+              : p,
+          ),
+        );
+      } else {
+        await likePost(Number(id));
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === id ? { ...p, liked: true, likes: p.likes + 1 } : p,
+          ),
+        );
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Logout failed");
-    } finally {
-      setLoggingOut(false);
+      showToast("Like action failed");
     }
   };
 
+  const handlePostSubmit = async (content: string, image?: File) => {
+    try {
+      let newFeedPost;
+
+      if (image) {
+        newFeedPost = await createPostWithImage(content, image);
+      } else {
+        newFeedPost = await createPost(content);
+      }
+
+      const newPost: Post = {
+        id: String(newFeedPost.id),
+        author: currentUser?.username ?? "You",
+        handle: `@${currentUser?.username ?? "you"}`,
+        avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
+        time: "Just now",
+        content: newFeedPost.content,
+        imageUrl: newFeedPost.image_url ?? undefined,
+        likes: 0,
+        liked: false,
+        comments: [],
+        archived: false,
+        isOwner: true,
+        shared: false,
+        saved: false,
+      };
+
+      setPosts((prev) => [newPost, ...prev]);
+
+      showToast("Post shared!");
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to create post");
+    }
+  };
+
+  const loadComments = async (postId: string) => {
+    try {
+      const rawComments = await getComments(Number(postId));
+
+      const mappedComments: Comment[] = rawComments.map((c) => {
+        const commentUser = usersMap[c.user_id];
+
+        return {
+          id: String(c.id),
+          userId: c.user_id,
+          author: commentUser?.username ?? `User ${c.user_id}`,
+          handle: `@${commentUser?.username ?? `user${c.user_id}`}`,
+          avatarColor: "#7C3AED",
+          content: c.content,
+          time: new Date(c.created_at).toLocaleDateString(),
+        };
+      });
+
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, comments: mappedComments } : p,
+        ),
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const addComment = async (id: string, commentContent: string) => {
+    try {
+      await createComment(Number(id), commentContent);
+      showToast("Reply added!");
+      await loadComments(id);
+    } catch (err) {
+      showToast("Failed to add reply");
+    }
+  };
+
+  const handleDeleteComment = async (postId: string, commentId: string) => {
+    try {
+      await deleteComment(Number(commentId));
+      showToast("Comment deleted");
+      await loadComments(postId);
+    } catch (err) {
+      showToast("Failed to delete comment");
+    }
+  };
+
+  const handleEditComment = async (
+    postId: string,
+    commentId: string,
+    content: string,
+  ) => {
+    try {
+      await updateComment(Number(commentId), content);
+      showToast("Comment updated");
+      await loadComments(postId);
+    } catch {
+      showToast("Failed to update comment");
+    }
+  };
+
+  const handleDeletePost = async (id: string) => {
+    try {
+      await deletePost(Number(id));
+
+      setPosts((prev) => prev.filter((p) => p.id !== id));
+
+      showToast("Post deleted");
+    } catch {
+      showToast("Delete failed");
+    }
+  };
+
+  const toggleArchive = async (id: string) => {
+    const post = posts.find((p) => p.id === id);
+
+    if (!post) return;
+
+    try {
+      if (post.archived) {
+        await unarchivePost(Number(id));
+
+        setPosts((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, archived: false } : p)),
+        );
+
+        showToast("Post unarchived");
+      } else {
+        await archivePost(Number(id));
+
+        setPosts((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, archived: true } : p)),
+        );
+
+        showToast("Post archived");
+      }
+    } catch {
+      showToast("Archive failed");
+    }
+  };
+
+  const saveEdit = async (id: string, newContent: string) => {
+    try {
+      await updatePost(Number(id), newContent);
+
+      setPosts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, content: newContent } : p)),
+      );
+
+      showToast("Post updated");
+    } catch {
+      showToast("Edit failed");
+    }
+  };
+
+  const handleSharePost = async (post: Post) => {
+    try {
+      await sharePost(post.post_id);
+
+      await refreshFeed();
+
+      showToast("Post shared");
+    } catch (err) {
+      console.error(err);
+      showToast("Share failed");
+    }
+  };
+  const handleUnsharePost = async (post: Post) => {
+    try {
+      await unsharePost(Number(post.post_id));
+
+      await refreshFeed();
+
+      showToast("Post unshared");
+    } catch {
+      showToast("Failed to unshare post");
+    }
+  };
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+      <div className="flex items-center justify-center h-screen text-white bg-zinc-950">
+        Loading feed...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6">
-      <h1 className="text-4xl font-bold">Homepage</h1>
-      {user && (
-        <p className="text-gray-600">
-          Welcome, <span className="font-semibold">{user.username}</span>
-        </p>
-      )}
+    <>
+      <style>{`
+        @keyframes drift1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px,-30px); } }
+        @keyframes drift2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-30px,40px); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastIn { from { opacity: 0; transform: translate(-50%,12px); } to { opacity: 1; transform: translate(-50%,0); } }
+        @keyframes expandIn { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 600px; } }
+        .blob1 { animation: drift1 14s ease-in-out infinite; }
+        .blob2 { animation: drift2 18s ease-in-out infinite; }
+        .post-enter { animation: fadeIn 0.35s ease both; }
+        .comments-enter { animation: expandIn 0.25s ease both; overflow: hidden; }
+        .toast { animation: toastIn 0.25s ease both; }
 
-      {error && (
-        <p
-          className="text-sm text-center px-4 py-2 rounded-xl"
-          style={{
-            color: "#dc2626",
-            background: "#fef2f2",
-            border: "1px solid #fecaca",
-          }}
-        >
-          {error}
-        </p>
-      )}
+        .glass-panel {
+          background: rgba(255,255,255,0.55);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.7);
+        }
+      `}</style>
 
-      <button
-        type="button"
-        onClick={handleLogout}
-        disabled={loggingOut}
-        className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white"
+      <div
+        className="min-h-screen relative overflow-hidden bg-cover bg-center"
         style={{
-          background: loggingOut ? "#a78bfa" : "#7C3AED",
-          cursor: loggingOut ? "not-allowed" : "pointer",
+          background:
+            "linear-gradient(135deg, #FAFAFF 0%, #F3F0FF 50%, #EEF2FF 100%)",
         }}
       >
-        {loggingOut ? "Logging out..." : "Logout"}
-      </button>
-    </div>
+        {/* Visual decoration blobs */}
+        <div
+          className="blob1 absolute rounded-full pointer-events-none"
+          style={{
+            width: "560px",
+            height: "560px",
+            background:
+              "radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)",
+            top: "-160px",
+            left: "-100px",
+            filter: "blur(20px)",
+          }}
+        />
+        <div
+          className="blob2 absolute rounded-full pointer-events-none"
+          style={{
+            width: "480px",
+            height: "480px",
+            background:
+              "radial-gradient(circle, rgba(99,102,241,0.16) 0%, transparent 70%)",
+            top: "30%",
+            right: "-120px",
+            filter: "blur(20px)",
+          }}
+        />
+
+        {toast && (
+          <div
+            className="toast fixed bottom-6 left-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold text-white"
+            style={{
+              background: "linear-gradient(135deg,#7C3AED,#6366F1)",
+              boxShadow: "0 8px 24px rgba(124,58,237,0.35)",
+            }}
+          >
+            {toast}
+          </div>
+        )}
+
+        <div className="relative z-10 flex max-w-7xl mx-auto gap-5 px-5 py-5">
+          {/* REUSABLE SIDEBAR */}
+          <Sidebar />
+
+          <main className="flex-1 max-w-xl mx-auto w-full space-y-4">
+            {activeNav === "Home" && (
+              <PostComposer
+                allowImageUpload={true}
+                avatarFallback={currentUser?.username?.charAt(0) ?? "U"}
+                onPostSubmit={handlePostSubmit}
+              />
+            )}
+
+            {activeNav === "Archived" && visiblePosts.length === 0 && (
+              <div
+                className="glass-panel rounded-3xl p-8 text-center"
+                style={{ boxShadow: "0 8px 32px rgba(124,58,237,0.08)" }}
+              >
+                <p className="text-sm font-medium text-gray-550">
+                  No archived posts. Archive a post from its menu and it'll show
+                  up here.
+                </p>
+              </div>
+            )}
+
+            {/* Explore tab */}
+            {activeNav === "Explore" && currentUser && (
+              <ExploreTab currentUserId={currentUser.id} />
+            )}
+
+            {activeNav === "Notifications" && currentUser && (
+              <NotificationsTab
+                currentUserId={currentUser.id}
+                currentUsername={currentUser.username}
+              />
+            )}
+
+            {activeNav === "Messages" && currentUser && (
+              <MessagesTab currentUserId={currentUser.id} />
+            )}
+
+            {(activeNav === "Home" || activeNav === "Archived") &&
+              visiblePosts.map((post) => (
+                <div key={post.id}>
+                  <PostCard
+                    post={post}
+                    currentUserId={currentUser?.id}
+                    currentUserInitial={currentUser?.username?.charAt(0) ?? "U"}
+                    onLike={toggleLike}
+                    onShare={handleSharePost}
+                    onUnshare={handleUnsharePost}
+                    onArchive={toggleArchive}
+                    onDelete={handleDeletePost}
+                    onEdit={saveEdit}
+                    onAddComment={addComment}
+                    onEditComment={handleEditComment}
+                    onDeleteComment={handleDeleteComment}
+                  />
+                </div>
+              ))}
+          </main>
+
+          <RightSidebar
+            suggestedUsers={suggestedUsers.map((u) => ({
+              id: u.id,
+              name: u.username,
+              username: u.username,
+              avatar_url: u.avatar_url ?? "",
+            }))}
+            trendingTopics={trendingTopics}
+            showSuggested={suggestedUsers.length > 0}
+          />
+        </div>
+      </div>
+    </>
   );
 }

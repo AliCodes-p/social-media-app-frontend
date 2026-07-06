@@ -24,7 +24,7 @@ export default function Splash() {
     const rafId = requestAnimationFrame(tick);
 
     const navTimer = setTimeout(() => {
-      router.push("/login");
+      router.push("/auth/login");
     }, 2000);
 
     return () => {
