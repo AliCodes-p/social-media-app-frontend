@@ -1,4 +1,6 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/backend";
+console.log("NEXT_PUBLIC_API_URL =", process.env.NEXT_PUBLIC_API_URL);
+console.log("API_BASE =", API_BASE);
 
 type ApiErrorBody = {
   detail?: string | { msg: string }[];
@@ -22,12 +24,13 @@ async function apiRequest<T>(
   options: RequestInit = {},
   _retry = true,
 ): Promise<T> {
+  console.log("Request URL:", `${API_BASE}${path}`);
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
       ...options.headers,
+      "Content-Type": "application/json",
     },
   });
 
@@ -149,6 +152,8 @@ export interface FeedPost {
   status: string;
   created_at: string;
   updated_at: string;
+  likes_count: number;
+  liked_by_me: boolean;
 
   //  ADD THESE (from backend)
   is_shared: boolean;
@@ -172,7 +177,10 @@ export function getAllPosts() {
 export function createPost(content: string, imageUrl?: string | null) {
   return apiRequest<FeedPost>("/posts/", {
     method: "POST",
-    body: JSON.stringify({ content, image_url: imageUrl }),
+    body: JSON.stringify({
+      content,
+      image_url: imageUrl,
+    }),
   });
 }
 
@@ -188,15 +196,17 @@ export async function createPostWithImage(content: string, image: File) {
     body: formData,
   });
 
-  const data = await response.json();
+  const text = await response.text();
+
+  console.log("STATUS:", response.status);
+  console.log("BODY:", text);
 
   if (!response.ok) {
-    throw new Error(data.detail || "Upload failed");
+    throw new Error(text);
   }
 
-  return data;
+  return JSON.parse(text);
 }
-
 export function getPost(postId: number) {
   return apiRequest<FeedPost>(`/posts/${postId}`);
 }
@@ -369,8 +379,8 @@ export interface ShareResponse {
   created_at: string;
 }
 
-export function sharePost(postId: number) {
-  return apiRequest<ShareResponse>(`/posts/${postId}/share`, {
+export async function sharePost(postId: number) {
+  return apiRequest(`/posts/${postId}/share`, {
     method: "POST",
   });
 }

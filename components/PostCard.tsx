@@ -20,16 +20,16 @@ interface PostCardProps {
   post: Post;
   currentUserInitial?: string;
   currentUserId?: number;
-  onLike: (id: string) => void;
+  onLike: (id: number) => void;
   onShare?: (post: Post) => void;
   onUnshare?: (post: Post) => void;
-  onArchive?: (id: string) => void;
-  onDelete?: (id: string) => void;
-  onEdit?: (id: string, newContent: string) => void;
-  onAddComment?: (postId: string, content: string) => void;
-  onEditComment?: (postId: string, commentId: string, content: string) => void;
-  onDeleteComment?: (postId: string, commentId: string) => void;
-  onBookmark?: (id: string) => void;
+  onArchive?: (id: number) => void;
+  onDelete?: (id: number) => void;
+  onEdit?: (id: number, newContent: string) => void;
+  onAddComment?: (postId: number, content: string) => void;
+  onEditComment?: (postId: number, commentId: number, content: string) => void;
+  onDeleteComment?: (postId: number, commentId: number) => void;
+  onBookmark?: (id: number) => void;
   showBookmark?: boolean;
   linkToPost?: boolean;
 }
@@ -51,12 +51,13 @@ export default function PostCard({
   showBookmark = false,
   linkToPost = true,
 }: PostCardProps) {
+  console.log("POSTCARD DATA:", post);
   const [isEditing, setIsEditing] = useState(false);
   const [editDraft, setEditDraft] = useState(post.content);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
   const [isKebabOpen, setIsKebabOpen] = useState(false);
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [commentEditDraft, setCommentEditDraft] = useState("");
 
   const kebabRef = useRef<HTMLDivElement>(null);
@@ -83,13 +84,13 @@ export default function PostCard({
 
   const handleAddComment = () => {
     if (!commentDraft.trim() || !onAddComment) return;
-    onAddComment(post.id, commentDraft.trim());
+    onAddComment(post.post_id ?? post.id, commentDraft.trim());
     setCommentDraft("");
   };
 
-  const handleSaveCommentEdit = (commentId: string) => {
+  const handleSaveCommentEdit = (commentId: number) => {
     if (!commentEditDraft.trim() || !onEditComment) return;
-    onEditComment(post.id, commentId, commentEditDraft.trim());
+    onEditComment(post.post_id ?? post.id, commentId, commentEditDraft.trim());
     setEditingCommentId(null);
     setCommentEditDraft("");
   };
@@ -258,10 +259,15 @@ export default function PostCard({
           )}
 
           {/* Action Buttons Bar */}
+
           <div className="flex items-center justify-between mt-4 text-gray-400">
             {/* Like */}
             <button
-              onClick={() => onLike(post.id)}
+              onClick={() =>
+                onLike(
+                  Number(String(post.post_id ?? post.id).replace("post_", "")),
+                )
+              }
               className="flex items-center gap-1.5 text-xs font-semibold hover:text-pink-400 transition"
               style={{ color: post.liked ? "#EC4899" : "" }}
             >
@@ -278,8 +284,11 @@ export default function PostCard({
                 setIsCommentsOpen(next);
 
                 if (next && onAddComment) {
-                  // trigger parent load
-                  (window as any).__loadComments?.(post.id);
+                  (window as any).__loadComments?.(
+                    Number(
+                      String(post.post_id ?? post.id).replace("post_", ""),
+                    ),
+                  );
                 }
               }}
               className="flex items-center gap-1.5 text-xs font-semibold hover:text-violet-400 transition"

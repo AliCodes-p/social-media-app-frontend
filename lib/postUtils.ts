@@ -9,7 +9,7 @@ export function feedPostToPost(
   const user = usersMap[feed.user_id];
 
   return {
-    id: String(feed.id),
+    id: feed.post_id,
 
     type: feed.type,
     post_id: feed.post_id,
@@ -24,8 +24,8 @@ export function feedPostToPost(
     content: feed.content,
     imageUrl: feed.image_url ?? undefined,
 
-    likes: 0,
-    liked: false,
+    likes: feed.likes_count,
+    liked: feed.liked_by_me,
     comments: [],
 
     archived: false,

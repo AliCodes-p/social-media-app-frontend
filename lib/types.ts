@@ -1,6 +1,6 @@
 export interface Comment {
-  id: string;
-  userId?: number;
+  id: number;
+  userId: number;
   author: string;
   handle: string;
   avatarColor: string;
@@ -15,7 +15,7 @@ export interface SharedFrom {
 }
 
 export interface Post {
-  id: string;
+  id: number;
 
   type?: "post" | "share";
   post_id?: number;

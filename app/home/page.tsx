@@ -22,9 +22,9 @@ import {
   createPostWithImage,
 } from "@/lib/api";
 import {
-  feedPostToPost,
   buildUsersMap,
   extractHashtags,
+  feedPostToPost,
 } from "@/lib/postUtils";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -126,13 +126,13 @@ export default function HomePage() {
       ? posts.filter((p) => p.archived)
       : posts.filter((p) => !p.archived);
 
-  const toggleLike = async (id: string) => {
+  const toggleLike = async (id: number) => {
     const post = posts.find((p) => p.id === id);
     if (!post) return;
 
     try {
       if (post.liked) {
-        await unlikePost(Number(id));
+        await unlikePost(id);
         setPosts((prev) =>
           prev.map((p) =>
             p.id === id
@@ -141,7 +141,8 @@ export default function HomePage() {
           ),
         );
       } else {
-        await likePost(Number(id));
+        await likePost(id);
+
         setPosts((prev) =>
           prev.map((p) =>
             p.id === id ? { ...p, liked: true, likes: p.likes + 1 } : p,
@@ -155,49 +156,30 @@ export default function HomePage() {
 
   const handlePostSubmit = async (content: string, image?: File) => {
     try {
-      let newFeedPost;
-
       if (image) {
-        newFeedPost = await createPostWithImage(content, image);
+        await createPostWithImage(content, image);
       } else {
-        newFeedPost = await createPost(content);
+        await createPost(content);
       }
 
-      const newPost: Post = {
-        id: String(newFeedPost.id),
-        author: currentUser?.username ?? "You",
-        handle: `@${currentUser?.username ?? "you"}`,
-        avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
-        time: "Just now",
-        content: newFeedPost.content,
-        imageUrl: newFeedPost.image_url ?? undefined,
-        likes: 0,
-        liked: false,
-        comments: [],
-        archived: false,
-        isOwner: true,
-        shared: false,
-        saved: false,
-      };
+      await refreshFeed();
 
-      setPosts((prev) => [newPost, ...prev]);
-
-      showToast("Post shared!");
+      showToast("Post created!");
     } catch (err) {
       console.error(err);
       showToast("Failed to create post");
     }
   };
 
-  const loadComments = async (postId: string) => {
+  const loadComments = async (postId: number) => {
     try {
-      const rawComments = await getComments(Number(postId));
+      const rawComments = await getComments(postId);
 
       const mappedComments: Comment[] = rawComments.map((c) => {
         const commentUser = usersMap[c.user_id];
 
         return {
-          id: String(c.id),
+          id: c.id,
           userId: c.user_id,
           author: commentUser?.username ?? `User ${c.user_id}`,
           handle: `@${commentUser?.username ?? `user${c.user_id}`}`,
@@ -216,9 +198,9 @@ export default function HomePage() {
       console.error(err);
     }
   };
-  const addComment = async (id: string, commentContent: string) => {
+  const addComment = async (id: number, commentContent: string) => {
     try {
-      await createComment(Number(id), commentContent);
+      await createComment(id, commentContent);
       showToast("Reply added!");
       await loadComments(id);
     } catch (err) {
@@ -226,9 +208,9 @@ export default function HomePage() {
     }
   };
 
-  const handleDeleteComment = async (postId: string, commentId: string) => {
+  const handleDeleteComment = async (postId: number, commentId: number) => {
     try {
-      await deleteComment(Number(commentId));
+      await deleteComment(commentId);
       showToast("Comment deleted");
       await loadComments(postId);
     } catch (err) {
@@ -237,12 +219,12 @@ export default function HomePage() {
   };
 
   const handleEditComment = async (
-    postId: string,
-    commentId: string,
+    postId: number,
+    commentId: number,
     content: string,
   ) => {
     try {
-      await updateComment(Number(commentId), content);
+      await updateComment(commentId, content);
       showToast("Comment updated");
       await loadComments(postId);
     } catch {
@@ -250,9 +232,9 @@ export default function HomePage() {
     }
   };
 
-  const handleDeletePost = async (id: string) => {
+  const handleDeletePost = async (id: number) => {
     try {
-      await deletePost(Number(id));
+      await deletePost(id);
 
       setPosts((prev) => prev.filter((p) => p.id !== id));
 
@@ -262,14 +244,14 @@ export default function HomePage() {
     }
   };
 
-  const toggleArchive = async (id: string) => {
+  const toggleArchive = async (id: number) => {
     const post = posts.find((p) => p.id === id);
 
     if (!post) return;
 
     try {
       if (post.archived) {
-        await unarchivePost(Number(id));
+        await unarchivePost(id);
 
         setPosts((prev) =>
           prev.map((p) => (p.id === id ? { ...p, archived: false } : p)),
@@ -277,7 +259,7 @@ export default function HomePage() {
 
         showToast("Post unarchived");
       } else {
-        await archivePost(Number(id));
+        await archivePost(id);
 
         setPosts((prev) =>
           prev.map((p) => (p.id === id ? { ...p, archived: true } : p)),
@@ -290,9 +272,9 @@ export default function HomePage() {
     }
   };
 
-  const saveEdit = async (id: string, newContent: string) => {
+  const saveEdit = async (id: number, newContent: string) => {
     try {
-      await updatePost(Number(id), newContent);
+      await updatePost(id, newContent);
 
       setPosts((prev) =>
         prev.map((p) => (p.id === id ? { ...p, content: newContent } : p)),
@@ -305,8 +287,12 @@ export default function HomePage() {
   };
 
   const handleSharePost = async (post: Post) => {
+    console.log("Sharing post:", post);
+    console.log("id:", post.id);
+    console.log("post_id:", post.post_id);
+
     try {
-      await sharePost(post.post_id);
+      await sharePost(post.post_id!);
 
       await refreshFeed();
 

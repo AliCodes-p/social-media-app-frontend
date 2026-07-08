@@ -48,7 +48,7 @@ export default function NotificationsTab({
 
         await Promise.all(
           posts.slice(0, 20).map(async (post) => {
-            const comments = await getComments(post.id).catch(
+            const comments = await getComments(post.post_id).catch(
               () => [] as CommentResponse[],
             );
             for (const comment of comments) {
@@ -59,7 +59,7 @@ export default function NotificationsTab({
                 type: "comment",
                 message: `commented on your post`,
                 time: comment.created_at,
-                postId: post.id,
+                postId: post.post_id,
                 username: commenter?.username ?? `User ${comment.user_id}`,
               });
             }
@@ -121,7 +121,9 @@ export default function NotificationsTab({
       {notifications.length === 0 ? (
         <div className="px-5 py-12 text-center">
           <span className="mb-3 block text-4xl">🔔</span>
-          <p className="text-sm font-semibold text-gray-700">You&apos;re all caught up</p>
+          <p className="text-sm font-semibold text-gray-700">
+            You&apos;re all caught up
+          </p>
           <p className="mt-1 text-xs text-gray-500">
             Comments on your posts will show up here, @{currentUsername}.
           </p>

@@ -30,7 +30,9 @@ export default function PostDetailPage() {
   const id = params?.id as string;
 
   const [post, setPost] = useState<Post | null>(null);
-  const [usersMap, setUsersMap] = useState<Record<number, UserCardResponse>>({});
+  const [usersMap, setUsersMap] = useState<Record<number, UserCardResponse>>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [currentUserInitial, setCurrentUserInitial] = useState("U");
@@ -64,7 +66,7 @@ export default function PostDetailPage() {
       const mappedComments: Comment[] = rawComments.map((c) => {
         const commentUser = lookup[c.user_id];
         return {
-          id: String(c.id),
+          id: c.id,
           userId: c.user_id,
           author: commentUser?.username ?? `User ${c.user_id}`,
           handle: `@${commentUser?.username ?? `user${c.user_id}`}`,
@@ -75,7 +77,7 @@ export default function PostDetailPage() {
       });
 
       setPost({
-        id: String(rawPost.id),
+        id: rawPost.id,
         author: authorUser?.username ?? `User ${rawPost.user_id}`,
         handle: `@${authorUser?.username ?? `user${rawPost.user_id}`}`,
         avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
@@ -101,14 +103,14 @@ export default function PostDetailPage() {
     loadPostDetails();
   }, [id]);
 
-  const handleLike = async (postId: string) => {
+  const handleLike = async (postId: number) => {
     if (!post) return;
     try {
       if (post.liked) {
-        await unlikePost(Number(postId));
+        await unlikePost(postId);
         setPost({ ...post, liked: false, likes: Math.max(0, post.likes - 1) });
       } else {
-        await likePost(Number(postId));
+        await likePost(postId);
         setPost({ ...post, liked: true, likes: post.likes + 1 });
       }
     } catch (err) {
@@ -116,10 +118,10 @@ export default function PostDetailPage() {
     }
   };
 
-  const handleSaveEdit = async (postId: string, newContent: string) => {
+  const handleSaveEdit = async (postId: number, newContent: string) => {
     if (!post) return;
     try {
-      await updatePost(Number(postId), newContent);
+      await updatePost(postId, newContent);
       setPost({ ...post, content: newContent });
       showToast("Post updated");
     } catch (err) {
@@ -127,9 +129,9 @@ export default function PostDetailPage() {
     }
   };
 
-  const handleDelete = async (postId: string) => {
+  const handleDelete = async (postId: number) => {
     try {
-      await deletePost(Number(postId));
+      await deletePost(postId);
       showToast("Post deleted");
       setPost(null);
     } catch (err) {
@@ -137,11 +139,11 @@ export default function PostDetailPage() {
     }
   };
 
-  const toggleArchive = async (postId: string) => {
+  const toggleArchive = async (postId: number) => {
     if (!post) return;
     try {
       if (post.archived) {
-        await unarchivePost(Number(postId));
+        await unarchivePost(postId);
         setPost({ ...post, archived: false });
         showToast("Post unarchived");
       } else {
@@ -154,9 +156,9 @@ export default function PostDetailPage() {
     }
   };
 
-  const addComment = async (postId: string, commentContent: string) => {
+  const addComment = async (postId: number, commentContent: string) => {
     try {
-      await createComment(Number(postId), commentContent);
+      await createComment(postId, commentContent);
       showToast("Reply added!");
       await loadPostDetails();
     } catch (err) {
@@ -164,9 +166,9 @@ export default function PostDetailPage() {
     }
   };
 
-  const handleDeleteComment = async (postId: string, commentId: string) => {
+  const handleDeleteComment = async (postId: number, commentId: number) => {
     try {
-      await deleteComment(Number(commentId));
+      await deleteComment(commentId);
       showToast("Comment deleted");
       await loadPostDetails();
     } catch (err) {
@@ -175,12 +177,12 @@ export default function PostDetailPage() {
   };
 
   const handleEditComment = async (
-    postId: string,
-    commentId: string,
+    postId: number,
+    commentId: number,
     content: string,
   ) => {
     try {
-      await updateComment(Number(commentId), content);
+      await updateComment(commentId, content);
       showToast("Comment updated");
       await loadPostDetails();
     } catch {

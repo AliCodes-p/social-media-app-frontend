@@ -29,7 +29,9 @@ import { Post, Comment } from "@/lib/types";
 export default function PostsPage() {
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [usersMap, setUsersMap] = useState<Record<number, UserCardResponse>>({});
+  const [usersMap, setUsersMap] = useState<Record<number, UserCardResponse>>(
+    {},
+  );
   const [currentUser, setCurrentUser] = useState<{
     id: number;
     username: string;
@@ -74,13 +76,14 @@ export default function PostsPage() {
     loadPosts();
   }, [router]);
 
-  const loadComments = async (postId: string) => {
+  const loadComments = async (postId: number) => {
     try {
-      const rawComments = await getComments(Number(postId));
+      const rawComments = await getComments(postId);
+
       const mappedComments: Comment[] = rawComments.map((c) => {
         const commentUser = usersMap[c.user_id];
         return {
-          id: String(c.id),
+          id: c.id,
           userId: c.user_id,
           author: commentUser?.username ?? `User ${c.user_id}`,
           handle: `@${commentUser?.username ?? `user${c.user_id}`}`,
@@ -99,12 +102,12 @@ export default function PostsPage() {
     }
   };
 
-  const toggleLike = async (id: string) => {
+  const toggleLike = async (id: number) => {
     const post = posts.find((p) => p.id === id);
     if (!post) return;
     try {
       if (post.liked) {
-        await unlikePost(Number(id));
+        await unlikePost(id);
         setPosts((prev) =>
           prev.map((p) =>
             p.id === id
@@ -113,7 +116,7 @@ export default function PostsPage() {
           ),
         );
       } else {
-        await likePost(Number(id));
+        await likePost(id);
         setPosts((prev) =>
           prev.map((p) =>
             p.id === id ? { ...p, liked: true, likes: p.likes + 1 } : p,
@@ -149,21 +152,19 @@ export default function PostsPage() {
     }
   };
 
-  const toggleArchive = async (id: string) => {
+  const toggleArchive = async (id: number) => {
     const post = posts.find((p) => p.id === id);
     if (!post) return;
     try {
       if (post.archived) {
-        await unarchivePost(Number(id));
+        await unarchivePost(id);
         setPosts((prev) =>
           prev.map((p) => (p.id === id ? { ...p, archived: false } : p)),
         );
         showToast("Post unarchived");
       } else {
-        await archivePost(Number(id));
-        setPosts((prev) =>
-          prev.filter((p) => p.id !== id),
-        );
+        await archivePost(id);
+        setPosts((prev) => prev.filter((p) => p.id !== id));
         showToast("Post archived");
       }
     } catch {
@@ -171,9 +172,9 @@ export default function PostsPage() {
     }
   };
 
-  const handleDeletePost = async (id: string) => {
+  const handleDeletePost = async (id: number) => {
     try {
-      await deletePost(Number(id));
+      await deletePost(id);
       setPosts((prev) => prev.filter((p) => p.id !== id));
       showToast("Post deleted");
     } catch {
@@ -181,7 +182,7 @@ export default function PostsPage() {
     }
   };
 
-  const saveEdit = async (id: string, newContent: string) => {
+  const saveEdit = async (id: number, newContent: string) => {
     try {
       await updatePost(Number(id), newContent);
       setPosts((prev) =>
@@ -193,9 +194,9 @@ export default function PostsPage() {
     }
   };
 
-  const addComment = async (id: string, commentContent: string) => {
+  const addComment = async (id: number, commentContent: string) => {
     try {
-      await createComment(Number(id), commentContent);
+      await createComment(id, commentContent);
       showToast("Reply added!");
       await loadComments(id);
     } catch {
@@ -204,12 +205,12 @@ export default function PostsPage() {
   };
 
   const handleEditComment = async (
-    postId: string,
-    commentId: string,
+    postId: number,
+    commentId: number,
     content: string,
   ) => {
     try {
-      await updateComment(Number(commentId), content);
+      await updateComment(commentId, content);
       showToast("Comment updated");
       await loadComments(postId);
     } catch {
@@ -217,9 +218,9 @@ export default function PostsPage() {
     }
   };
 
-  const handleDeleteComment = async (postId: string, commentId: string) => {
+  const handleDeleteComment = async (postId: number, commentId: number) => {
     try {
-      await deleteComment(Number(commentId));
+      await deleteComment(commentId);
       showToast("Comment deleted");
       await loadComments(postId);
     } catch {

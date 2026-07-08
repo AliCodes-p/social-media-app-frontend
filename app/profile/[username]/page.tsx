@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import {
-  Edit,
-  Sparkles,
-} from "lucide-react";
+import { Edit, Sparkles } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import RightSidebar from "@/components/RightSidebar";
 import PostCard from "@/components/PostCard";
@@ -49,7 +46,9 @@ export default function ProfilePage() {
   const [currentUserInitial, setCurrentUserInitial] = useState("U");
 
   const [posts, setPosts] = useState<Post[]>([]);
-  const [usersMap, setUsersMap] = useState<Record<number, UserCardResponse>>({});
+  const [usersMap, setUsersMap] = useState<Record<number, UserCardResponse>>(
+    {},
+  );
   const [activeTab, setActiveTab] = useState<ProfileTab>("posts");
   const [toast, setToast] = useState<string | null>(null);
 
@@ -76,30 +75,37 @@ export default function ProfilePage() {
         setCurrentUserInitial(me?.username?.charAt(0) ?? "U");
 
         // 3. Build users lookup map
-        const allUsers = await getAllUsers().catch(() => [] as UserCardResponse[]);
+        const allUsers = await getAllUsers().catch(
+          () => [] as UserCardResponse[],
+        );
         const lookup: Record<number, UserCardResponse> = {};
-        allUsers.forEach((u) => { lookup[u.id] = u; });
+        allUsers.forEach((u) => {
+          lookup[u.id] = u;
+        });
         setUsersMap(lookup);
 
         // 4. Fetch feed and filter to this user's posts
         const feed = await getFeed().catch(() => [] as FeedPost[]);
         const userPosts = feed
           .filter((p) => p.user_id === profileData.id)
-          .map((p): Post => ({
-            id: String(p.id),
-            author: profileData.username,
-            handle: `@${profileData.username}`,
-            avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
-            time: new Date(p.created_at).toLocaleString(),
-            content: p.content,
-            imageUrl: p.image_url ?? undefined,
-            likes: 0,
-            liked: false,
-            comments: [],
-            archived: p.status === "archived",
-            isOwner: me?.username === username,
-            saved: false,
-          }));
+          .map(
+            (p): Post => ({
+              id: p.post_id,
+              post_id: p.post_id,
+              author: profileData.username,
+              handle: `@${profileData.username}`,
+              avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
+              time: new Date(p.created_at).toLocaleString(),
+              content: p.content,
+              imageUrl: p.image_url ?? undefined,
+              likes: p.likes_count,
+              liked: p.liked_by_me,
+              comments: [],
+              archived: p.status === "archived",
+              isOwner: me?.username === username,
+              saved: false,
+            }),
+          );
         setPosts(userPosts);
       } catch {
         setUserNotFound(true);
@@ -111,13 +117,13 @@ export default function ProfilePage() {
     load();
   }, [username]);
 
-  const loadComments = async (postId: string) => {
+  const loadComments = async (postId: number) => {
     try {
-      const raw = await getComments(Number(postId));
+      const raw = await getComments(postId);
       const mapped: Comment[] = raw.map((c: CommentResponse) => {
         const cu = usersMap[c.user_id];
         return {
-          id: String(c.id),
+          id: c.id,
           userId: c.user_id,
           author: cu?.username ?? `User ${c.user_id}`,
           handle: `@${cu?.username ?? `user${c.user_id}`}`,
@@ -134,91 +140,127 @@ export default function ProfilePage() {
     }
   };
 
-  const handleLike = async (id: string) => {
+  const handleLike = async (id: number) => {
     const post = posts.find((p) => p.id === id);
     if (!post) return;
     try {
       if (post.liked) {
-        await unlikePost(Number(id));
-        setPosts((prev) => prev.map((p) => p.id === id ? { ...p, liked: false, likes: Math.max(0, p.likes - 1) } : p));
+        await unlikePost(id);
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? { ...p, liked: false, likes: Math.max(0, p.likes - 1) }
+              : p,
+          ),
+        );
       } else {
-        await likePost(Number(id));
-        setPosts((prev) => prev.map((p) => p.id === id ? { ...p, liked: true, likes: p.likes + 1 } : p));
+        await likePost(id);
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === id ? { ...p, liked: true, likes: p.likes + 1 } : p,
+          ),
+        );
       }
-    } catch { showToast("Like action failed"); }
+    } catch {
+      showToast("Like action failed");
+    }
   };
 
   const handleShare = async (post: Post) => {
     try {
       await sharePost(Number(post.id));
-      setPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, shared: true } : p));
+      setPosts((prev) =>
+        prev.map((p) => (p.id === post.id ? { ...p, shared: true } : p)),
+      );
       showToast("Post shared!");
-    } catch { showToast("Share failed"); }
+    } catch {
+      showToast("Share failed");
+    }
   };
 
   const handleUnshare = async (post: Post) => {
     try {
       await unsharePost(Number(post.id));
-      setPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, shared: false } : p));
+      setPosts((prev) =>
+        prev.map((p) => (p.id === post.id ? { ...p, shared: false } : p)),
+      );
       showToast("Post unshared");
-    } catch { showToast("Unshare failed"); }
+    } catch {
+      showToast("Unshare failed");
+    }
   };
 
-  const handleArchive = async (id: string) => {
+  const handleArchive = async (id: number) => {
     const post = posts.find((p) => p.id === id);
     if (!post) return;
     try {
       if (post.archived) {
-        await unarchivePost(Number(id));
-        setPosts((prev) => prev.map((p) => p.id === id ? { ...p, archived: false } : p));
+        await unarchivePost(id);
+        setPosts((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, archived: false } : p)),
+        );
         showToast("Post unarchived");
       } else {
         await archivePost(Number(id));
-        setPosts((prev) => prev.map((p) => p.id === id ? { ...p, archived: true } : p));
+        setPosts((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, archived: true } : p)),
+        );
         showToast("Post archived");
       }
-    } catch { showToast("Archive failed"); }
+    } catch {
+      showToast("Archive failed");
+    }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
-      await deletePost(Number(id));
+      await deletePost(id);
       setPosts((prev) => prev.filter((p) => p.id !== id));
       showToast("Post deleted");
-    } catch { showToast("Delete failed"); }
+    } catch {
+      showToast("Delete failed");
+    }
   };
 
-  const handleEdit = async (id: string, content: string) => {
+  const handleEdit = async (id: number, content: string) => {
     try {
-      await updatePost(Number(id), content);
-      setPosts((prev) => prev.map((p) => p.id === id ? { ...p, content } : p));
+      await updatePost(id, content);
+      setPosts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, content } : p)),
+      );
       showToast("Post updated");
-    } catch { showToast("Edit failed"); }
+    } catch {
+      showToast("Edit failed");
+    }
   };
 
-  const addComment = async (postId: string, content: string) => {
+  const addComment = async (postId: number, content: string) => {
     try {
-      await createComment(Number(postId), content);
+      await createComment(postId, content);
       showToast("Reply added!");
       await loadComments(postId);
-    } catch { showToast("Comment failed"); }
+    } catch {
+      showToast("Comment failed");
+    }
   };
 
-  const handleDeleteComment = async (postId: string, commentId: string) => {
+  const handleDeleteComment = async (postId: number, commentId: number) => {
     try {
-      await deleteComment(Number(commentId));
+      await deleteComment(commentId);
       showToast("Comment deleted");
       await loadComments(postId);
-    } catch { showToast("Failed"); }
+    } catch {
+      showToast("Failed");
+    }
   };
 
   const handleEditComment = async (
-    postId: string,
-    commentId: string,
+    postId: number,
+    commentId: number,
     content: string,
   ) => {
     try {
-      await updateComment(Number(commentId), content);
+      await updateComment(commentId, content);
       showToast("Comment updated");
       await loadComments(postId);
     } catch {
@@ -249,7 +291,9 @@ export default function ProfilePage() {
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A12]">
         <div className="rounded-3xl border border-white/10 bg-white/5 px-10 py-12 text-center backdrop-blur-xl">
           <p className="text-lg font-bold text-gray-200">User not found</p>
-          <p className="mt-1 text-sm text-gray-500">@{username} doesn't exist.</p>
+          <p className="mt-1 text-sm text-gray-500">
+            @{username} doesn't exist.
+          </p>
         </div>
       </div>
     );
@@ -280,7 +324,13 @@ export default function ProfilePage() {
                 {/* Cover */}
                 <div className="relative h-44 w-full sm:h-56">
                   {user.cover_url ? (
-                    <Image src={user.cover_url} alt="Cover" fill priority className="object-cover" />
+                    <Image
+                      src={user.cover_url}
+                      alt="Cover"
+                      fill
+                      priority
+                      className="object-cover"
+                    />
                   ) : (
                     <div className="h-full w-full bg-gradient-to-br from-purple-900/60 to-cyan-900/40" />
                   )}
@@ -292,7 +342,12 @@ export default function ProfilePage() {
                     {/* Avatar */}
                     <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-[#0A0A12] bg-gradient-to-br from-purple-600 to-cyan-500 shadow-lg sm:h-32 sm:w-32">
                       {user.avatar_url ? (
-                        <Image src={user.avatar_url} alt={user.username} fill className="object-cover" />
+                        <Image
+                          src={user.avatar_url}
+                          alt={user.username}
+                          fill
+                          className="object-cover"
+                        />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-3xl font-extrabold text-white">
                           {user.username.charAt(0).toUpperCase()}
@@ -315,11 +370,15 @@ export default function ProfilePage() {
 
                   <div className="mt-4 space-y-2">
                     <div>
-                      <h1 className="text-xl font-semibold text-white">{user.username}</h1>
+                      <h1 className="text-xl font-semibold text-white">
+                        {user.username}
+                      </h1>
                       <p className="text-sm text-gray-400">@{user.username}</p>
                     </div>
                     {user.bio && (
-                      <p className="max-w-xl text-sm leading-relaxed text-gray-300">{user.bio}</p>
+                      <p className="max-w-xl text-sm leading-relaxed text-gray-300">
+                        {user.bio}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -348,14 +407,18 @@ export default function ProfilePage() {
                 {visiblePosts.length === 0 ? (
                   <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-16 text-center backdrop-blur-xl">
                     <Sparkles className="mx-auto h-6 w-6 text-cyan-400" />
-                    <p className="mt-3 text-sm font-medium text-gray-200">Nothing here yet</p>
+                    <p className="mt-3 text-sm font-medium text-gray-200">
+                      Nothing here yet
+                    </p>
                     <p className="mt-1 text-sm text-gray-500">
-                      {activeTab === "media" ? "Photos you post will show up here." : "Posts will show up here."}
+                      {activeTab === "media"
+                        ? "Photos you post will show up here."
+                        : "Posts will show up here."}
                     </p>
                   </div>
                 ) : (
                   visiblePosts.map((post) => (
-                    <div key={post.id} onClick={() => loadComments(post.id)}>
+                    <div key={post.id}>
                       <PostCard
                         post={post}
                         currentUserId={currentUserId}

@@ -3,7 +3,14 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Edit, Camera, ArrowLeft, Archive, Sparkles, LogOut } from "lucide-react";
+import {
+  Edit,
+  Camera,
+  ArrowLeft,
+  Archive,
+  Sparkles,
+  LogOut,
+} from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import RightSidebar from "@/components/RightSidebar";
 import PostComposer from "@/components/PostComposer";
@@ -52,7 +59,9 @@ export default function MyProfilePage() {
   const [activePosts, setActivePosts] = useState<Post[]>([]);
   const [archivedPosts, setArchivedPosts] = useState<Post[]>([]);
   const [activeTab, setActiveTab] = useState<"posts" | "archived">("posts");
-  const [usersMap, setUsersMap] = useState<Record<number, UserCardResponse>>({});
+  const [usersMap, setUsersMap] = useState<Record<number, UserCardResponse>>(
+    {},
+  );
   const [toast, setToast] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,38 +91,48 @@ export default function MyProfilePage() {
       const feed = await getFeed().catch(() => []);
       const mappedActive = feed
         .filter((post) => post.user_id === myProfile.id)
-        .map((post): Post => ({
-          id: String(post.id),
+        .map(
+          (post): Post => ({
+            id: post.post_id,
+            post_id: post.post_id,
+
+            author: myProfile.username,
+            handle: `@${myProfile.username}`,
+            avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
+            time: new Date(post.created_at).toLocaleString(),
+
+            content: post.content,
+            imageUrl: post.image_url ?? undefined,
+
+            likes: post.likes_count,
+            liked: post.liked_by_me,
+
+            comments: [],
+
+            archived: post.status === "archived",
+            isOwner: true,
+          }),
+        );
+      setActivePosts(mappedActive);
+
+      // 4. Fetch archived posts
+      const archived = await getMyArchivedPosts().catch(() => []);
+      const mappedArchived = archived.map(
+        (post): Post => ({
+          id: post.post_id,
           author: myProfile.username,
           handle: `@${myProfile.username}`,
           avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
           time: new Date(post.created_at).toLocaleString(),
           content: post.content,
           imageUrl: post.image_url ?? undefined,
-          likes: 0,
-          liked: false,
+          likes: post.likes_count,
+          liked: post.liked_by_me,
           comments: [],
-          archived: post.status === "archived",
+          archived: true,
           isOwner: true,
-        }));
-      setActivePosts(mappedActive);
-
-      // 4. Fetch archived posts
-      const archived = await getMyArchivedPosts().catch(() => []);
-      const mappedArchived = archived.map((post): Post => ({
-        id: String(post.id),
-        author: myProfile.username,
-        handle: `@${myProfile.username}`,
-        avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
-        time: new Date(post.created_at).toLocaleString(),
-        content: post.content,
-        imageUrl: post.image_url ?? undefined,
-        likes: 0,
-        liked: false,
-        comments: [],
-        archived: true,
-        isOwner: true,
-      }));
+        }),
+      );
       setArchivedPosts(mappedArchived);
     } catch (err) {
       console.error(err);
@@ -166,22 +185,30 @@ export default function MyProfilePage() {
   };
 
   // Interactions
-  const handleLike = async (id: string) => {
+  const handleLike = async (id: number) => {
+    console.log("LIKE CLICKED ID:", id);
+
     const targetList = activeTab === "posts" ? activePosts : archivedPosts;
     const post = targetList.find((p) => p.id === id);
     if (!post) return;
 
     try {
       if (post.liked) {
-        await unlikePost(Number(id));
+        await unlikePost(id);
         const update = (list: Post[]) =>
-          list.map((p) => (p.id === id ? { ...p, liked: false, likes: Math.max(0, p.likes - 1) } : p));
+          list.map((p) =>
+            p.id === id
+              ? { ...p, liked: false, likes: Math.max(0, p.likes - 1) }
+              : p,
+          );
         if (activeTab === "posts") setActivePosts(update);
         else setArchivedPosts(update);
       } else {
-        await likePost(Number(id));
+        await likePost(id);
         const update = (list: Post[]) =>
-          list.map((p) => (p.id === id ? { ...p, liked: true, likes: p.likes + 1 } : p));
+          list.map((p) =>
+            p.id === id ? { ...p, liked: true, likes: p.likes + 1 } : p,
+          );
         if (activeTab === "posts") setActivePosts(update);
         else setArchivedPosts(update);
       }
@@ -190,9 +217,9 @@ export default function MyProfilePage() {
     }
   };
 
-  const handleDeletePost = async (id: string) => {
+  const handleDeletePost = async (id: number) => {
     try {
-      await deletePost(Number(id));
+      await deletePost(id);
       const filter = (list: Post[]) => list.filter((p) => p.id !== id);
       if (activeTab === "posts") setActivePosts(filter);
       else setArchivedPosts(filter);
@@ -202,17 +229,19 @@ export default function MyProfilePage() {
     }
   };
 
-  const toggleArchive = async (id: string) => {
-    const post = (activeTab === "posts" ? activePosts : archivedPosts).find((p) => p.id === id);
+  const toggleArchive = async (id: number) => {
+    const post = (activeTab === "posts" ? activePosts : archivedPosts).find(
+      (p) => p.id === id,
+    );
     if (!post) return;
 
     try {
       if (post.archived) {
-        await unarchivePost(Number(id));
+        await unarchivePost(id);
         showToast("Post unarchived");
         loadData();
       } else {
-        await archivePost(Number(id));
+        await archivePost(id);
         showToast("Post archived");
         loadData();
       }
@@ -221,10 +250,11 @@ export default function MyProfilePage() {
     }
   };
 
-  const handleSaveEdit = async (id: string, newContent: string) => {
+  const handleSaveEdit = async (id: number, newContent: string) => {
     try {
-      await updatePost(Number(id), newContent);
-      const update = (list: Post[]) => list.map((p) => (p.id === id ? { ...p, content: newContent } : p));
+      await updatePost(id, newContent);
+      const update = (list: Post[]) =>
+        list.map((p) => (p.id === id ? { ...p, content: newContent } : p));
       if (activeTab === "posts") setActivePosts(update);
       else setArchivedPosts(update);
       showToast("Post updated");
@@ -233,13 +263,15 @@ export default function MyProfilePage() {
     }
   };
 
-  const loadCommentsList = async (postId: string) => {
+  const loadCommentsList = async (postId: number) => {
     try {
-      const rawComments = await getComments(Number(postId));
+      const rawComments = await getComments(postId).catch(() => []);
+
       const mappedComments: Comment[] = rawComments.map((c) => {
         const commentUser = usersMap[c.user_id];
+
         return {
-          id: String(c.id),
+          id: c.id,
           userId: c.user_id,
           author: commentUser?.username ?? `User ${c.user_id}`,
           handle: `@${commentUser?.username ?? `user${c.user_id}`}`,
@@ -248,27 +280,34 @@ export default function MyProfilePage() {
           time: new Date(c.created_at).toLocaleDateString(),
         };
       });
-      const update = (list: Post[]) => list.map((p) => (p.id === postId ? { ...p, comments: mappedComments } : p));
-      if (activeTab === "posts") setActivePosts(update);
-      else setArchivedPosts(update);
+
+      const update = (list: Post[]) =>
+        list.map((p) =>
+          p.post_id === postId ? { ...p, comments: mappedComments } : p,
+        );
+
+      if (activeTab === "posts") {
+        setActivePosts(update);
+      } else {
+        setArchivedPosts(update);
+      }
     } catch (err) {
       console.error("Failed to load comments:", err);
     }
   };
 
-  const addComment = async (id: string, commentContent: string) => {
+  const addComment = async (id: number, commentContent: string) => {
     try {
-      await createComment(Number(id), commentContent);
+      await createComment(id, commentContent);
       showToast("Reply added!");
       await loadCommentsList(id);
     } catch (err) {
       showToast("Failed to add reply");
     }
   };
-
-  const handleDeleteComment = async (postId: string, commentId: string) => {
+  const handleDeleteComment = async (postId: number, commentId: number) => {
     try {
-      await deleteComment(Number(commentId));
+      await deleteComment(commentId);
       showToast("Comment deleted");
       await loadCommentsList(postId);
     } catch (err) {
@@ -277,12 +316,12 @@ export default function MyProfilePage() {
   };
 
   const handleEditComment = async (
-    postId: string,
-    commentId: string,
+    postId: number,
+    commentId: number,
     content: string,
   ) => {
     try {
-      await updateComment(Number(commentId), content);
+      await updateComment(commentId, content);
       showToast("Comment updated");
       await loadCommentsList(postId);
     } catch {
@@ -308,12 +347,12 @@ export default function MyProfilePage() {
 
   const visiblePosts = activeTab === "posts" ? activePosts : archivedPosts;
 
+  console.log("POSTCARD DATA:", post);
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0A0A12] text-gray-100">
       {toast && (
-        <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-xl shadow-violet-900/35"
-        >
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-xl shadow-violet-900/35">
           {toast}
         </div>
       )}
@@ -329,7 +368,12 @@ export default function MyProfilePage() {
                 {/* Cover Banner */}
                 <div className="relative h-44 w-full sm:h-56 bg-gradient-to-br from-purple-900/60 to-cyan-900/40">
                   {profile.cover_url && (
-                    <Image src={profile.cover_url} alt="Cover" fill className="object-cover" />
+                    <Image
+                      src={profile.cover_url}
+                      alt="Cover"
+                      fill
+                      className="object-cover"
+                    />
                   )}
                 </div>
 
@@ -341,7 +385,12 @@ export default function MyProfilePage() {
                       onClick={handleAvatarClick}
                     >
                       {profile.avatar_url ? (
-                        <Image src={profile.avatar_url} alt="" fill className="object-cover" />
+                        <Image
+                          src={profile.avatar_url}
+                          alt=""
+                          fill
+                          className="object-cover"
+                        />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center text-3xl font-extrabold text-white">
                           {profile.username.charAt(0).toUpperCase()}
@@ -384,7 +433,9 @@ export default function MyProfilePage() {
                   {editing ? (
                     <div className="mt-4 space-y-3 p-4 rounded-2xl border border-white/10 bg-black/20">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-400 mb-1">Username</label>
+                        <label className="block text-xs font-semibold text-gray-400 mb-1">
+                          Username
+                        </label>
                         <input
                           type="text"
                           value={usernameDraft}
@@ -393,7 +444,9 @@ export default function MyProfilePage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-400 mb-1">Bio</label>
+                        <label className="block text-xs font-semibold text-gray-400 mb-1">
+                          Bio
+                        </label>
                         <textarea
                           value={bioDraft}
                           onChange={(e) => setBioDraft(e.target.value)}
@@ -414,11 +467,17 @@ export default function MyProfilePage() {
                   ) : (
                     <div className="mt-4 space-y-2">
                       <div>
-                        <h1 className="text-xl font-semibold text-white">{profile.username}</h1>
-                        <p className="text-sm text-gray-400">@{profile.username}</p>
+                        <h1 className="text-xl font-semibold text-white">
+                          {profile.username}
+                        </h1>
+                        <p className="text-sm text-gray-400">
+                          @{profile.username}
+                        </p>
                       </div>
                       {profile.bio && (
-                        <p className="max-w-xl text-sm leading-relaxed text-gray-300">{profile.bio}</p>
+                        <p className="max-w-xl text-sm leading-relaxed text-gray-300">
+                          {profile.bio}
+                        </p>
                       )}
                     </div>
                   )}
@@ -456,11 +515,16 @@ export default function MyProfilePage() {
                 {visiblePosts.length === 0 ? (
                   <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-16 text-center">
                     <Sparkles className="mx-auto h-6 w-6 text-cyan-400" />
-                    <p className="mt-3 text-sm font-medium text-gray-200">No posts in this tab</p>
+                    <p className="mt-3 text-sm font-medium text-gray-200">
+                      No posts in this tab
+                    </p>
                   </div>
                 ) : (
                   visiblePosts.map((post) => (
-                    <div key={post.id} onClick={() => loadCommentsList(post.id)}>
+                    <div
+                      key={post.id}
+                      onClick={() => loadCommentsList(post.post_id!)}
+                    >
                       <PostCard
                         post={post}
                         currentUserId={profile?.id}
