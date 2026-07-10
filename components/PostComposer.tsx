@@ -9,7 +9,6 @@ interface PostComposerProps {
   avatarFallback?: string;
   placeholder?: string;
   allowImageUpload?: boolean;
-
   onPostSubmit: (content: string, imageFile?: File) => void;
 }
 
@@ -60,14 +59,15 @@ export default function PostComposer({
 
   return (
     <div
-      className="glass-panel rounded-3xl p-5 border border-white/10 bg-white/5 backdrop-blur-xl"
+      className="bg-white rounded-2xl p-5 transition-all duration-300"
       style={{
-        boxShadow: "0 8px 32px rgba(124,58,237,0.08)",
+        boxShadow:
+          "0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(124,58,237,0.06)",
       }}
     >
       <div className="flex gap-3">
         {/* Avatar */}
-        <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-sm font-bold text-white">
+        <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-sm">
           {avatarUrl ? (
             <Image src={avatarUrl} alt="Avatar" fill className="object-cover" />
           ) : (
@@ -82,12 +82,12 @@ export default function PostComposer({
             onChange={(e) => setContent(e.target.value)}
             placeholder={placeholder}
             rows={allowImageUpload ? 3 : 2}
-            className="w-full resize-none bg-transparent text-[15px] text-white outline-none placeholder-gray-500"
+            className="w-full resize-none bg-transparent text-[15px] text-gray-800 outline-none placeholder-gray-400 mt-1.5"
           />
 
           {/* Preview */}
           {allowImageUpload && previewUrl && (
-            <div className="relative mt-3 overflow-hidden rounded-xl border border-white/10">
+            <div className="relative mt-3 overflow-hidden rounded-xl border border-gray-100 shadow-sm">
               <img
                 src={previewUrl}
                 alt="Preview"
@@ -97,7 +97,7 @@ export default function PostComposer({
               <button
                 type="button"
                 onClick={removeSelectedImage}
-                className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80"
+                className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-900/80 text-white backdrop-blur-sm transition hover:bg-gray-900"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -105,7 +105,7 @@ export default function PostComposer({
           )}
 
           {/* Bottom Row */}
-          <div className="mt-3 flex items-center justify-between">
+          <div className="mt-3 flex items-center justify-between pt-2 border-t border-gray-50">
             <div>
               {allowImageUpload && (
                 <>
@@ -120,9 +120,9 @@ export default function PostComposer({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-400 transition hover:bg-violet-500/10 hover:text-violet-300"
+                    className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-500 transition hover:bg-violet-50 hover:text-violet-600"
                   >
-                    <ImageIcon className="h-4 w-4" />
+                    <ImageIcon className="h-[18px] w-[18px] text-violet-500" />
                     <span>Photo</span>
                   </button>
                 </>
@@ -132,10 +132,7 @@ export default function PostComposer({
             <button
               onClick={handleSubmit}
               disabled={!content.trim() && !selectedImage}
-              className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-1.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-              style={{
-                boxShadow: "0 4px 14px rgba(124,58,237,0.3)",
-              }}
+              className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-1.5 text-sm font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
             >
               Post
             </button>

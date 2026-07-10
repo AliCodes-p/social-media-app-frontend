@@ -25,6 +25,7 @@ import Sidebar from "@/components/Sidebar";
 import RightSidebar from "@/components/RightSidebar";
 import PostCard from "@/components/PostCard";
 import { Post, Comment } from "@/lib/types";
+import { Sparkles, Terminal } from "lucide-react";
 
 export default function PostsPage() {
   const router = useRouter();
@@ -89,7 +90,10 @@ export default function PostsPage() {
           handle: `@${commentUser?.username ?? `user${c.user_id}`}`,
           avatarColor: "#7C3AED",
           content: c.content,
-          time: new Date(c.created_at).toLocaleDateString(),
+          time: new Date(c.created_at).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          }),
         };
       });
       setPosts((prev) =>
@@ -230,59 +234,83 @@ export default function PostsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0A0A12] text-white">
-        <p className="text-sm font-medium">Loading posts...</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAFF] text-gray-500">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+        <p className="ml-3 text-sm font-medium text-gray-600">
+          Loading posts...
+        </p>
       </div>
     );
   }
 
   return (
     <div
-      className="min-h-screen relative overflow-hidden text-gray-100"
+      className="min-h-screen relative overflow-hidden text-gray-800"
       style={{
         background:
           "linear-gradient(135deg, #FAFAFF 0%, #F3F0FF 50%, #EEF2FF 100%)",
       }}
     >
+      {/* Floating Light Glass Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-xl">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-xl shadow-violet-900/20 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <Terminal className="h-4 w-4" />
           {toast}
         </div>
       )}
 
+      {/* Main Container Layout */}
       <div className="relative z-10 flex max-w-7xl mx-auto gap-5 px-5 py-5">
         <Sidebar />
 
-        <main className="flex-1 max-w-xl mx-auto w-full space-y-4">
-          <div className="mb-4">
-            <h1 className="text-xl font-bold text-gray-900">All Posts</h1>
-            <p className="text-sm text-gray-500">
-              Browse all posts from everyone ({posts.length})
+        <main className="flex-1 max-w-xl mx-auto w-full space-y-4 min-w-0">
+          {/* Header Card Block */}
+          <div
+            className="mb-4 bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl p-5"
+            style={{ boxShadow: "0 8px 32px rgba(124,58,237,0.04)" }}
+          >
+            <h1 className="text-xl font-bold text-gray-950 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-violet-600" />
+              All Posts
+            </h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Browse all public posts from everyone ({posts.length})
             </p>
           </div>
+
           {posts.length === 0 ? (
-            <div className="glass-panel rounded-3xl p-10 text-center text-sm text-gray-500">
+            <div
+              className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl p-10 text-center text-sm text-gray-500"
+              style={{ boxShadow: "0 8px 32px rgba(124,58,237,0.04)" }}
+            >
               No posts yet. Be the first to share something!
             </div>
           ) : (
-            posts.map((post) => (
-              <div key={post.id} onClick={() => loadComments(post.id)}>
-                <PostCard
-                  post={post}
-                  currentUserId={currentUser?.id}
-                  currentUserInitial={currentUser?.username?.charAt(0) ?? "U"}
-                  onLike={toggleLike}
-                  onShare={handleSharePost}
-                  onUnshare={handleUnsharePost}
-                  onArchive={toggleArchive}
-                  onDelete={handleDeletePost}
-                  onEdit={saveEdit}
-                  onAddComment={addComment}
-                  onEditComment={handleEditComment}
-                  onDeleteComment={handleDeleteComment}
-                />
-              </div>
-            ))
+            <div className="space-y-4">
+              {posts.map((post) => (
+                <div
+                  key={`${post.type}-${post.id}`}
+                  onClick={() => !post.comments && loadComments(post.id)}
+                  className="cursor-pointer block"
+                >
+                  <PostCard
+                    post={post}
+                    currentUserId={currentUser?.id}
+                    currentUserInitial={currentUser?.username?.charAt(0) ?? "U"}
+                    onLike={toggleLike}
+                    onShare={handleSharePost}
+                    onUnshare={handleUnsharePost}
+                    onArchive={toggleArchive}
+                    onDelete={handleDeletePost}
+                    onEdit={saveEdit}
+                    onAddComment={addComment}
+                    onLoadComments={loadComments}
+                    onEditComment={handleEditComment}
+                    onDeleteComment={handleDeleteComment}
+                  />
+                </div>
+              ))}
+            </div>
           )}
         </main>
 

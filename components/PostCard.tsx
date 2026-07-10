@@ -27,11 +27,13 @@ interface PostCardProps {
   onDelete?: (id: number) => void;
   onEdit?: (id: number, newContent: string) => void;
   onAddComment?: (postId: number, content: string) => void;
+  onLoadComments?: (postId: number) => void;
   onEditComment?: (postId: number, commentId: number, content: string) => void;
   onDeleteComment?: (postId: number, commentId: number) => void;
   onBookmark?: (id: number) => void;
   showBookmark?: boolean;
   linkToPost?: boolean;
+  showShare?: boolean;
 }
 
 export default function PostCard({
@@ -45,11 +47,13 @@ export default function PostCard({
   onDelete,
   onEdit,
   onAddComment,
+  onLoadComments,
   onEditComment,
   onDeleteComment,
   onBookmark,
   showBookmark = false,
   linkToPost = true,
+  showShare = true,
 }: PostCardProps) {
   console.log("POSTCARD DATA:", post);
   const [isEditing, setIsEditing] = useState(false);
@@ -105,14 +109,23 @@ export default function PostCard({
 
   return (
     <article
-      className="glass-panel post-card post-enter rounded-3xl p-5 border border-white/10 bg-white/5 shadow-lg shadow-black/20 backdrop-blur-xl transition duration-300 hover:border-white/20 hover:bg-white/[0.07]"
-      style={{ boxShadow: "0 4px 20px rgba(124,58,237,0.06)" }}
+      className={`relative bg-white rounded-2xl p-5 transition duration-300 transform hover:-translate-y-0.5 hover:shadow-md ${
+        isKebabOpen ? "z-50" : "z-0"
+      }`}
+      style={{
+        boxShadow:
+          "0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(124,58,237,0.06)",
+      }}
     >
       {/* Shared From Indicator */}
       {post.sharedFrom && (
-        <div className="flex items-center gap-1.5 mb-3 pb-3 text-xs font-semibold text-violet-400 border-b border-white/10">
+        <div className="flex items-center gap-1.5 mb-3 pb-3 text-xs font-semibold text-violet-600 border-b border-gray-100">
           <Share2 className="w-3.5 h-3.5" />
-          <span>You shared a post from {post.sharedFrom.author}</span>
+          <span>
+            {post.sharedFrom.sharedByUserId === currentUserId
+              ? `You shared a post from ${post.author}`
+              : `${post.sharedFrom.author} shared a post from ${post.author}`}
+          </span>
         </div>
       )}
 
@@ -136,11 +149,11 @@ export default function PostCard({
             <div className="flex items-center gap-1.5 flex-wrap">
               <Link
                 href={`/profile/${authorUsername}`}
-                className="text-[15px] font-bold text-white hover:underline"
+                className="text-[15px] font-bold text-gray-900 hover:underline"
               >
                 {post.sharedFrom?.author ?? post.author}
               </Link>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-gray-500">
                 {post.sharedFrom?.handle ?? post.handle} ·{" "}
                 {linkToPost ? (
                   <Link href={`/post/${post.id}`} className="hover:underline">
@@ -150,7 +163,7 @@ export default function PostCard({
                   post.time
                 )}
                 {post.archived && (
-                  <span className="ml-1.5 font-semibold text-violet-300">
+                  <span className="ml-1.5 font-semibold text-violet-500">
                     · Archived
                   </span>
                 )}
@@ -162,14 +175,14 @@ export default function PostCard({
               <div className="relative" ref={kebabRef}>
                 <button
                   onClick={() => setIsKebabOpen(!isKebabOpen)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-white/10 hover:text-white transition"
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition"
                 >
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
 
                 {isKebabOpen && (
                   <div
-                    className="absolute right-0 top-8 z-20 w-40 rounded-xl overflow-hidden border border-white/10 bg-zinc-900/95 shadow-xl backdrop-blur-md"
+                    className="absolute right-0 top-8 z-[100] w-40 rounded-xl overflow-hidden border border-gray-100 bg-white shadow-xl"
                     style={{ animation: "fadeIn 0.15s ease both" }}
                   >
                     {onEdit && (
@@ -178,9 +191,9 @@ export default function PostCard({
                           setIsEditing(true);
                           setIsKebabOpen(false);
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/10 flex items-center gap-2"
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-3.5 h-3.5 text-gray-400" />
                         Edit post
                       </button>
                     )}
@@ -190,9 +203,9 @@ export default function PostCard({
                           onArchive(post.id);
                           setIsKebabOpen(false);
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/10 flex items-center gap-2"
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                       >
-                        <Archive className="w-3.5 h-3.5" />
+                        <Archive className="w-3.5 h-3.5 text-gray-400" />
                         {post.archived ? "Unarchive" : "Archive"}
                       </button>
                     )}
@@ -202,7 +215,7 @@ export default function PostCard({
                           onDelete(post.id);
                           setIsKebabOpen(false);
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 flex items-center gap-2"
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-2"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         Delete post
@@ -222,18 +235,18 @@ export default function PostCard({
                 onChange={(e) => setEditDraft(e.target.value)}
                 rows={3}
                 autoFocus
-                className="w-full text-[15px] rounded-xl p-3 bg-zinc-800 border border-violet-500 text-white outline-none focus:ring-1 focus:ring-violet-500"
+                className="w-full text-[15px] rounded-xl p-3 bg-gray-50 border border-violet-200 text-gray-900 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
               />
               <div className="flex justify-end gap-2 mt-2">
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="px-4 py-1.5 rounded-full text-sm font-semibold bg-zinc-700 text-gray-200 hover:bg-zinc-650 transition"
+                  className="px-4 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  className="px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 transition"
+                  className="px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 transition shadow-sm"
                 >
                   Save
                 </button>
@@ -242,16 +255,16 @@ export default function PostCard({
           ) : (
             /* Render Content text & Image */
             <>
-              <p className="text-[15px] mt-1.5 leading-relaxed text-gray-200">
+              <p className="text-[15px] mt-1.5 leading-relaxed text-gray-700">
                 {post.content}
               </p>
               {post.imageUrl && (
-                <div className="relative mt-3 h-72 w-full overflow-hidden rounded-2xl border border-white/10 sm:h-96">
+                <div className="relative mt-3 h-72 w-full overflow-hidden rounded-xl border border-gray-100 sm:h-96">
                   <Image
                     src={post.imageUrl}
                     alt=""
                     fill
-                    className="object-cover transition duration-500 hover:scale-[1.02]"
+                    className="object-cover transition duration-500 hover:scale-[1.01]"
                   />
                 </div>
               )}
@@ -259,7 +272,6 @@ export default function PostCard({
           )}
 
           {/* Action Buttons Bar */}
-
           <div className="flex items-center justify-between mt-4 text-gray-400">
             {/* Like */}
             <button
@@ -268,7 +280,7 @@ export default function PostCard({
                   Number(String(post.post_id ?? post.id).replace("post_", "")),
                 )
               }
-              className="flex items-center gap-1.5 text-xs font-semibold hover:text-pink-400 transition"
+              className="flex items-center gap-1.5 text-xs font-semibold hover:text-pink-500 transition"
               style={{ color: post.liked ? "#EC4899" : "" }}
             >
               <Heart
@@ -283,23 +295,19 @@ export default function PostCard({
                 const next = !isCommentsOpen;
                 setIsCommentsOpen(next);
 
-                if (next && onAddComment) {
-                  (window as any).__loadComments?.(
-                    Number(
-                      String(post.post_id ?? post.id).replace("post_", ""),
-                    ),
-                  );
+                if (next && onLoadComments) {
+                  onLoadComments(post.post_id ?? post.id);
                 }
               }}
-              className="flex items-center gap-1.5 text-xs font-semibold hover:text-violet-400 transition"
+              className="flex items-center gap-1.5 text-xs font-semibold hover:text-violet-600 transition"
               style={{ color: isCommentsOpen ? "#8B5CF6" : "" }}
             >
               <MessageCircle className="w-4 h-4" />
-              <span>{post.comments ? post.comments.length : 0}</span>
+              <span>{post.commentsCount}</span>
             </button>
 
             {/* Share / Unshare */}
-            {(onShare || onUnshare) && (
+            {showShare && (onShare || onUnshare) && (
               <button
                 onClick={() => {
                   if (post.sharedFrom && onUnshare) {
@@ -308,12 +316,12 @@ export default function PostCard({
                     onShare(post);
                   }
                 }}
-                className="flex items-center gap-1.5 text-xs font-semibold hover:text-indigo-400 transition"
+                className="flex items-center gap-1.5 text-xs font-semibold hover:text-indigo-600 transition"
                 style={{ color: post.sharedFrom ? "#6366F1" : "" }}
               >
                 <Share2
                   className={`w-4 h-4 ${
-                    post.sharedFrom ? "text-indigo-400" : ""
+                    post.sharedFrom ? "text-indigo-500" : ""
                   }`}
                 />
                 <span>{post.sharedFrom ? "Shared" : "Share"}</span>
@@ -324,7 +332,7 @@ export default function PostCard({
             {showBookmark && onBookmark && (
               <button
                 onClick={() => onBookmark(post.id)}
-                className="flex items-center gap-1.5 text-xs font-semibold hover:text-amber-400 transition"
+                className="flex items-center gap-1.5 text-xs font-semibold hover:text-amber-500 transition"
                 style={{ color: post.saved ? "#F59E0B" : "" }}
               >
                 <Bookmark
@@ -336,11 +344,11 @@ export default function PostCard({
 
           {/* Comments Drawer */}
           {isCommentsOpen && post.comments && (
-            <div className="comments-enter mt-4 pt-4 border-t border-white/10">
+            <div className="comments-enter mt-4 pt-4 border-t border-gray-100">
               {/* Comments List */}
               <div className="space-y-3 mb-3">
                 {post.comments.length === 0 && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-400">
                     No comments yet — be the first to reply.
                   </p>
                 )}
@@ -357,10 +365,10 @@ export default function PostCard({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-white">
+                        <span className="text-xs font-bold text-gray-900">
                           {comment.author}
                         </span>
-                        <span className="text-xs text-gray-550">
+                        <span className="text-xs text-gray-400">
                           {comment.time}
                         </span>
                       </div>
@@ -371,23 +379,23 @@ export default function PostCard({
                             onChange={(e) =>
                               setCommentEditDraft(e.target.value)
                             }
-                            className="flex-1 text-sm rounded-lg px-2 py-1 bg-zinc-800 border border-white/10 text-white outline-none"
+                            className="flex-1 text-sm rounded-lg px-2 py-1 bg-gray-50 border border-gray-200 text-gray-900 outline-none focus:border-violet-400"
                           />
                           <button
                             onClick={() => handleSaveCommentEdit(comment.id)}
-                            className="text-xs font-semibold text-violet-400"
+                            className="text-xs font-semibold text-violet-600"
                           >
                             Save
                           </button>
                           <button
                             onClick={() => setEditingCommentId(null)}
-                            className="text-xs text-gray-500"
+                            className="text-xs text-gray-400"
                           >
                             Cancel
                           </button>
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-300">
+                        <p className="text-sm text-gray-600">
                           {comment.content}
                         </p>
                       )}
@@ -395,7 +403,7 @@ export default function PostCard({
                     {(post.isOwner ||
                       (currentUserId !== undefined &&
                         comment.userId === currentUserId)) && (
-                      <div className="flex shrink-0 gap-1 opacity-0 group-hover:opacity-100 transition">
+                      <div className="flex shrink-0 gap-2 opacity-0 group-hover:opacity-100 transition">
                         {onEditComment &&
                           comment.userId === currentUserId &&
                           editingCommentId !== comment.id && (
@@ -404,15 +412,20 @@ export default function PostCard({
                                 setEditingCommentId(comment.id);
                                 setCommentEditDraft(comment.content);
                               }}
-                              className="text-xs font-medium text-violet-400 hover:text-violet-300"
+                              className="text-xs font-medium text-violet-600 hover:text-violet-700"
                             >
                               Edit
                             </button>
                           )}
                         {onDeleteComment && (
                           <button
-                            onClick={() => onDeleteComment(post.id, comment.id)}
-                            className="text-xs font-medium text-red-400 hover:text-red-300"
+                            onClick={() =>
+                              onDeleteComment(
+                                post.post_id ?? post.id,
+                                comment.id,
+                              )
+                            }
+                            className="text-xs font-medium text-red-500 hover:text-red-600"
                           >
                             Remove
                           </button>
@@ -434,12 +447,12 @@ export default function PostCard({
                     onChange={(e) => setCommentDraft(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
                     placeholder="Write a comment..."
-                    className="flex-1 text-sm rounded-full px-3.5 py-2 bg-zinc-800 border border-white/10 text-white outline-none focus:border-violet-500"
+                    className="flex-1 text-sm rounded-full px-3.5 py-2 bg-gray-50 border border-gray-100 text-gray-900 outline-none focus:border-violet-300 placeholder-gray-400"
                   />
                   <button
                     onClick={handleAddComment}
                     disabled={!commentDraft.trim()}
-                    className="text-sm font-semibold text-violet-400 hover:text-violet-300 disabled:opacity-40 disabled:hover:text-violet-400 transition"
+                    className="text-sm font-semibold text-violet-600 hover:text-violet-700 disabled:opacity-40 disabled:hover:text-violet-600 transition"
                   >
                     Reply
                   </button>

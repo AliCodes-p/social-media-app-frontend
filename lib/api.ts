@@ -145,7 +145,7 @@ export function resetPassword(reset_token: string, new_password: string) {
 // =========================
 
 export interface FeedPost {
-  id: number;
+  post_id: number;
   user_id: number;
   content: string;
   image_url: string | null;
@@ -153,6 +153,7 @@ export interface FeedPost {
   created_at: string;
   updated_at: string;
   likes_count: number;
+  comments_count: number;
   liked_by_me: boolean;
 
   //  ADD THESE (from backend)

@@ -27,7 +27,7 @@ import {
   feedPostToPost,
 } from "@/lib/postUtils";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import RightSidebar from "@/components/RightSidebar";
 import PostComposer from "@/components/PostComposer";
@@ -39,6 +39,7 @@ import { Post, Comment } from "@/lib/types";
 
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [currentUser, setCurrentUser] = useState<{
     id: number;
@@ -96,6 +97,7 @@ export default function HomePage() {
             posts: `${count} post${count !== 1 ? "s" : ""}`,
           })),
         );
+
         const mapped = feed.map((post) => feedPostToPost(post, lookup, me.id));
         setPosts(mapped);
       } catch (error) {
@@ -109,17 +111,9 @@ export default function HomePage() {
   }, [router]);
 
   useEffect(() => {
-    const syncTabFromUrl = () => {
-      if (window.location.pathname !== "/home") return;
-      const tab =
-        new URLSearchParams(window.location.search).get("tab") ?? "Home";
-      setActiveNav(tab);
-    };
-
-    syncTabFromUrl();
-    window.addEventListener("popstate", syncTabFromUrl);
-    return () => window.removeEventListener("popstate", syncTabFromUrl);
-  }, []);
+    const tab = searchParams.get("tab") ?? "Home";
+    setActiveNav(tab);
+  }, [searchParams]);
 
   const visiblePosts =
     activeNav === "Archived"
@@ -198,12 +192,26 @@ export default function HomePage() {
       console.error(err);
     }
   };
+
   const addComment = async (id: number, commentContent: string) => {
     try {
       await createComment(id, commentContent);
-      showToast("Reply added!");
+
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                commentsCount: p.commentsCount + 1,
+              }
+            : p,
+        ),
+      );
+
       await loadComments(id);
-    } catch (err) {
+
+      showToast("Reply added!");
+    } catch {
       showToast("Failed to add reply");
     }
   };
@@ -211,7 +219,18 @@ export default function HomePage() {
   const handleDeleteComment = async (postId: number, commentId: number) => {
     try {
       await deleteComment(commentId);
-      showToast("Comment deleted");
+
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                commentsCount: Math.max(0, p.commentsCount - 1),
+              }
+            : p,
+        ),
+      );
+
       await loadComments(postId);
     } catch (err) {
       showToast("Failed to delete comment");
@@ -302,6 +321,7 @@ export default function HomePage() {
       showToast("Share failed");
     }
   };
+
   const handleUnsharePost = async (post: Post) => {
     try {
       await unsharePost(Number(post.post_id));
@@ -313,6 +333,7 @@ export default function HomePage() {
       showToast("Failed to unshare post");
     }
   };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen text-white bg-zinc-950">
@@ -431,7 +452,7 @@ export default function HomePage() {
 
             {(activeNav === "Home" || activeNav === "Archived") &&
               visiblePosts.map((post) => (
-                <div key={post.id}>
+                <div key={`${post.type}-${post.id}`}>
                   <PostCard
                     post={post}
                     currentUserId={currentUser?.id}
@@ -443,6 +464,7 @@ export default function HomePage() {
                     onDelete={handleDeletePost}
                     onEdit={saveEdit}
                     onAddComment={addComment}
+                    onLoadComments={loadComments}
                     onEditComment={handleEditComment}
                     onDeleteComment={handleDeleteComment}
                   />

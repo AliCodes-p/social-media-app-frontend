@@ -11,21 +11,23 @@ export function feedPostToPost(
   return {
     id: feed.post_id,
 
-    type: feed.type,
+    type: feed.type ?? "post",
     post_id: feed.post_id,
 
     author: user?.username ?? "Unknown",
     handle: `@${user?.username ?? "user"}`,
 
+    avatarUrl: user?.avatar_url ?? undefined, // <-- ADD THIS
     avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
 
-    time: new Date(feed.created_at).toLocaleString(),
+    time: new Date(feed.created_at + "Z").toLocaleString(),
 
     content: feed.content,
     imageUrl: feed.image_url ?? undefined,
 
-    likes: feed.likes_count,
-    liked: feed.liked_by_me,
+    likes: feed.likes_count ?? 0,
+    liked: feed.liked_by_me ?? false,
+    commentsCount: feed.comments_count ?? 0,
     comments: [],
 
     archived: false,
@@ -34,14 +36,16 @@ export function feedPostToPost(
     sharedFrom:
       feed.type === "share"
         ? {
+            sharedByUserId: feed.shared_by_user_id,
             author: usersMap[feed.shared_by_user_id!]?.username ?? "Unknown",
             handle: `@${usersMap[feed.shared_by_user_id!]?.username ?? "user"}`,
+            avatarUrl:
+              usersMap[feed.shared_by_user_id!]?.avatar_url ?? undefined, // <-- ADD THIS
             avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
           }
         : undefined,
   };
 }
-
 export function buildUsersMap(
   users: UserCardResponse[],
 ): Record<number, UserCardResponse> {

@@ -11,7 +11,9 @@ export interface Comment {
 export interface SharedFrom {
   author: string;
   handle: string;
+  avatarUrl?: string;
   avatarColor: string;
+  sharedByUserId: number;
 }
 
 export interface Post {
@@ -22,12 +24,14 @@ export interface Post {
 
   author: string;
   handle: string;
+
   avatarColor: string;
   time: string;
 
   content: string;
   likes: number;
   liked: boolean;
+  commentsCount: number;
 
   shared?: boolean;
 

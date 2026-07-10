@@ -72,21 +72,22 @@ export default function PostDetailPage() {
           handle: `@${commentUser?.username ?? `user${c.user_id}`}`,
           avatarColor: "#7C3AED",
           content: c.content,
-          time: new Date(c.created_at).toLocaleDateString(),
+          time: new Date(c.created_at + "Z").toLocaleDateString(),
         };
       });
 
       setPost({
-        id: rawPost.id,
+        id: rawPost.post_id,
         author: authorUser?.username ?? `User ${rawPost.user_id}`,
         handle: `@${authorUser?.username ?? `user${rawPost.user_id}`}`,
         avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
-        time: new Date(rawPost.created_at).toLocaleString(),
+        time: new Date(rawPost.created_at + "Z").toLocaleString(),
         content: rawPost.content,
         imageUrl: rawPost.image_url ?? undefined,
-        likes: 0,
-        liked: false,
+        likes: rawPost.likes_count,
+        liked: rawPost.liked_by_me,
         comments: mappedComments,
+        commentsCount: rawPost.comments_count,
         archived: rawPost.status === "archived",
         isOwner: rawPost.user_id === me?.id,
         saved: false,

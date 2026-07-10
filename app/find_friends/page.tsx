@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Search,
-  UserPlus,
-  X,
-} from "lucide-react";
+import { Search, UserPlus, X } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
-import { SkeletonCard, ErrorCard, EmptyState } from "@/components/FeedbackState";
+import {
+  SkeletonCard,
+  ErrorCard,
+  EmptyState,
+} from "@/components/FeedbackState";
 import { useRouter } from "next/navigation";
 import { getAllUsers, searchUsers as apiSearchUsers } from "@/lib/api";
 
@@ -36,7 +36,7 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
-/* ─────────────────────── User card ─────────────────────────── */
+/* ─────────────────────── User Card ─────────────────────────── */
 
 function UserCard({ user }: { user: User }) {
   const router = useRouter();
@@ -44,36 +44,38 @@ function UserCard({ user }: { user: User }) {
   return (
     <Link
       href={`/profile/${user.username}`}
-      className="group block overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-lg shadow-black/30 backdrop-blur-xl transition duration-300 hover:border-cyan-400/25 hover:bg-white/[0.08] hover:shadow-xl hover:shadow-cyan-900/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+      className="group block overflow-hidden rounded-3xl border border-white/80 bg-white/60 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+      style={{
+        boxShadow: "0 8px 32px rgba(124,58,237,0.04)",
+      }}
     >
-      {/* Cover strip */}
-      <div className="relative h-28 w-full overflow-hidden bg-gradient-to-br from-purple-900/60 to-cyan-900/40">
+      {/* Cover */}
+      <div className="relative h-28 overflow-hidden bg-gradient-to-br from-violet-500 via-indigo-400 to-violet-300">
         {user.cover_url ? (
           <Image
             src={user.cover_url}
             alt=""
             fill
-            className="object-cover opacity-70 transition duration-500 group-hover:scale-105 group-hover:opacity-90"
+            className="object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (
-          /* Generative gradient fallback keyed to username */
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(135deg,
-                hsl(${(user.username.charCodeAt(0) * 37) % 360},60%,25%) 0%,
-                hsl(${(user.username.charCodeAt(0) * 97) % 360},70%,18%) 100%)`,
+              background: `linear-gradient(
+                135deg,
+                hsl(${(user.username.charCodeAt(0) * 37) % 360},70%,72%),
+                hsl(${(user.username.charCodeAt(0) * 97) % 360},65%,82%)
+              )`,
             }}
           />
         )}
-        {/* Subtle inner glow */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A12]/70 via-transparent to-transparent" />
       </div>
 
-      <div className="px-5 pb-5 pt-1">
-        {/* Avatar row */}
-        <div className="flex items-end justify-between">
-          <div className="relative -mt-9 h-16 w-16 overflow-hidden rounded-full bg-gradient-to-br from-purple-600 to-cyan-500 ring-4 ring-[#0A0A12] transition duration-300 group-hover:ring-[#0D0D1A]">
+      <div className="px-5 pb-5">
+        {/* Avatar */}
+        <div className="flex justify-between">
+          <div className="relative -mt-8 h-16 w-16 overflow-hidden rounded-full border-4 border-white bg-gradient-to-br from-violet-600 to-indigo-600 shadow-md">
             {user.avatar_url ? (
               <Image
                 src={user.avatar_url}
@@ -82,41 +84,35 @@ function UserCard({ user }: { user: User }) {
                 className="object-cover"
               />
             ) : (
-              <span className="flex h-full w-full items-center justify-center text-base font-semibold text-white">
+              <div className="flex h-full w-full items-center justify-center text-lg font-bold text-white">
                 {initials(user.username)}
-              </span>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Identity */}
-        <div className="mt-2">
-          <p className="font-semibold leading-tight text-white">
-            {user.username}
-          </p>
-          <p className="text-sm text-gray-550">@{user.username}</p>
+        {/* User Info */}
+        <div className="mt-3">
+          <h3 className="text-lg font-bold text-gray-950">{user.username}</h3>
+
+          <p className="text-sm text-gray-500">@{user.username}</p>
+
+          {user.bio ? (
+            <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">
+              {user.bio}
+            </p>
+          ) : (
+            <p className="mt-3 text-sm italic text-gray-400">No bio yet.</p>
+          )}
         </div>
 
-        {/* Bio */}
-        {user.bio ? (
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-400">
-            {user.bio}
-          </p>
-        ) : (
-          <p className="mt-2 text-sm italic text-gray-600">No bio yet.</p>
-        )}
-
-        {/* Action row — stop propagation so clicks don't bubble to the Link */}
-        <div className="mt-4 flex gap-2" onClick={(e) => e.preventDefault()}>
+        {/* Button */}
+        <div className="mt-5" onClick={(e) => e.preventDefault()}>
           <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              router.push(`/profile/${user.username}`);
-            }}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-purple-600 to-cyan-500 py-2 text-sm font-medium text-white shadow-sm transition duration-200 hover:opacity-90"
+            onClick={() => router.push(`/profile/${user.username}`)}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
           >
-            <UserPlus className="h-3.5 w-3.5" />
+            <UserPlus className="h-4 w-4" />
             View Profile
           </button>
         </div>
@@ -130,16 +126,26 @@ function UserCard({ user }: { user: User }) {
 export default function FindFriendsPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [fetchState, setFetchState] = useState<FetchState>("idle");
+
   const [errorMsg, setErrorMsg] = useState("");
+
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /* Debounce search input */
+  /* ---------------- Debounce Search ---------------- */
+
   const handleSearchChange = (value: string) => {
     setQuery(value);
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => setDebouncedQuery(value), 400);
+
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedQuery(value);
+    }, 400);
   };
 
   const clearSearch = () => {
@@ -147,14 +153,17 @@ export default function FindFriendsPage() {
     setDebouncedQuery("");
   };
 
-  /* Fetch logic */
+  /* ---------------- Fetch Users ---------------- */
+
   const load = useCallback(async (searchQuery: string) => {
     setFetchState("loading");
     setErrorMsg("");
+
     try {
       const data = searchQuery.trim()
         ? await apiSearchUsers(searchQuery.trim())
         : await getAllUsers();
+
       setUsers(data);
       setFetchState("success");
     } catch (err) {
@@ -170,67 +179,112 @@ export default function FindFriendsPage() {
   const isLoading = fetchState === "loading";
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0A0A12] text-gray-100">
-      {/* Animated background blobs — identical to Home/Profile */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -left-32 -top-32 h-96 w-96 animate-pulse rounded-full bg-purple-600/20 blur-3xl" />
-        <div className="absolute right-0 top-1/3 h-[28rem] w-[28rem] animate-pulse rounded-full bg-cyan-500/15 blur-3xl [animation-delay:1.5s]" />
-        <div className="absolute bottom-0 left-1/4 h-80 w-80 animate-pulse rounded-full bg-fuchsia-600/10 blur-3xl [animation-delay:3s]" />
-      </div>
-
+    <div
+      className="min-h-screen"
+      style={{
+        background:
+          "linear-gradient(135deg,#FAFAFF 0%,#F3F0FF 50%,#EEF2FF 100%)",
+      }}
+    >
       <div className="flex">
         <Sidebar />
 
-        <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-10">
-          {/* Page header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-white">Find Friends</h1>
-            <p className="mt-1 text-sm text-gray-550">
-              Discover people to follow and connect with.
-            </p>
+        <main className="flex-1 max-w-7xl mx-auto px-5 py-6">
+          {/* Header */}
+          <div
+            className="mb-6 rounded-3xl border border-white/80 bg-white/60 p-6 backdrop-blur-xl"
+            style={{
+              boxShadow: "0 8px 32px rgba(124,58,237,.04)",
+            }}
+          >
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-950">
+                  Find Friends
+                </h1>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  Discover people, explore profiles and connect with the
+                  community.
+                </p>
+              </div>
+
+              <div className="text-sm text-gray-500">
+                {fetchState === "success" &&
+                  `${users.length} ${users.length === 1 ? "User" : "Users"}`}
+              </div>
+            </div>
           </div>
 
-          {/* Search bar */}
-          <div className="relative mb-8">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
-              <Search className="h-5 w-5 text-gray-500" />
+          {/* Search */}
+
+          <div
+            className="mb-8 rounded-3xl border border-white/80 bg-white/60 p-5 backdrop-blur-xl"
+            style={{
+              boxShadow: "0 8px 32px rgba(124,58,237,.04)",
+            }}
+          >
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-violet-500" />
+
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search users..."
+                className="
+                w-full
+                rounded-2xl
+                border
+                border-white/80
+                bg-white
+                py-3
+                pl-12
+                pr-12
+                text-sm
+                text-gray-800
+                placeholder:text-gray-400
+                outline-none
+                transition
+                focus:border-violet-400
+                focus:ring-4
+                focus:ring-violet-100
+              "
+              />
+
+              {query && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-violet-600 transition"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search username..."
-              className="w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-11 pr-11 text-sm text-gray-100 placeholder:text-gray-500 outline-none backdrop-blur-xl transition focus:border-cyan-400/40 focus:bg-white/[0.08] focus:ring-2 focus:ring-cyan-400/20"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute inset-y-0 right-4 flex items-center text-gray-500 transition hover:text-gray-300"
-              >
-                <X className="h-4 w-4" />
-              </button>
+
+            {query && fetchState === "success" && (
+              <p className="mt-3 text-sm text-gray-500">
+                {users.length === 0
+                  ? "No users found."
+                  : `${users.length} result${
+                      users.length > 1 ? "s" : ""
+                    } found.`}
+              </p>
             )}
           </div>
 
-          {/* Result count — only show when search is active */}
-          {fetchState === "success" && query && (
-            <p className="mb-4 text-sm text-gray-500">
-              {users.length === 0
-                ? "No results"
-                : `${users.length} result${users.length !== 1 ? "s" : ""} for "${query}"`}
-            </p>
-          )}
+          {/* Results */}
 
-          {/* Grid */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {fetchState === "error" ? (
               <ErrorCard
                 message={errorMsg}
                 onRetry={() => load(debouncedQuery)}
               />
             ) : isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+              Array.from({ length: 6 }).map((_, index) => (
+                <SkeletonCard key={index} />
+              ))
             ) : users.length === 0 ? (
               <EmptyState query={debouncedQuery} />
             ) : (

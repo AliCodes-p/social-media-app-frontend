@@ -1,8 +1,20 @@
 "use client";
+
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getcurrentUser, logout } from "@/lib/api";
+import {
+  Home,
+  Compass,
+  Bell,
+  Mail,
+  PlusCircle,
+  Users,
+  Archive,
+  LogOut,
+  Globe,
+} from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -17,7 +29,6 @@ const navItems: NavItem[] = [
   { label: "Notifications", href: "/home?tab=Notifications", icon: "bell" },
   { label: "Messages", href: "/home?tab=Messages", icon: "mail" },
   { label: "Create Post", href: "/create", icon: "plus" },
-  { label: "All Posts", href: "/posts", icon: "list" },
   { label: "Find Friends", href: "/find_friends", icon: "users" },
   { label: "Archived", href: "/home?tab=Archived", icon: "archive" },
 ];
@@ -28,24 +39,34 @@ function getHomeTab(href: string): string {
   return new URLSearchParams(query).get("tab") ?? "Home";
 }
 
-function NavIcon({ name }: { name: string }) {
-  const base = "w-4 h-4";
+function NavIcon({ name, className }: { name: string; className?: string }) {
   switch (name) {
-    case "home":    return <span className={base}>🏠</span>;
-    case "compass": return <span className={base}>🧭</span>;
-    case "bell":    return <span className={base}>🔔</span>;
-    case "mail":    return <span className={base}>✉️</span>;
-    case "users":   return <span className={base}>👥</span>;
-    case "archive": return <span className={base}>📦</span>;
-    case "plus":    return <span className={base}>➕</span>;
-    case "list":    return <span className={base}>📋</span>;
-    default:        return <span className={base}>•</span>;
+    case "home":
+      return <Home className={className} />;
+    case "compass":
+      return <Compass className={className} />;
+    case "bell":
+      return <Bell className={className} />;
+    case "mail":
+      return <Mail className={className} />;
+    case "users":
+      return <Users className={className} />;
+    case "archive":
+      return <Archive className={className} />;
+    case "plus":
+      return <PlusCircle className={className} />;
+    default:
+      return (
+        <span className="w-4 h-4 flex items-center justify-center">•</span>
+      );
   }
 }
 
 export default function Sidebar() {
   return (
-    <Suspense fallback={<aside className="hidden md:flex md:w-64 flex-shrink-0" />}>
+    <Suspense
+      fallback={<aside className="hidden md:flex md:w-64 flex-shrink-0" />}
+    >
       <SidebarContent />
     </Suspense>
   );
@@ -71,7 +92,6 @@ function SidebarContent() {
     is_verified: boolean;
   } | null>(null);
 
-  // Track whether the user fetch has completed so we can show a spinner
   const [userLoading, setUserLoading] = useState(true);
 
   useEffect(() => {
@@ -95,91 +115,105 @@ function SidebarContent() {
   };
 
   return (
-    <aside className="hidden md:flex md:w-64 flex-shrink-0">
-      <div
-        className="w-full rounded-3xl p-4 flex flex-col sticky top-5"
-        style={{
-          background: "rgba(255,255,255,0.75)",
-          backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255,255,255,0.7)",
-          boxShadow: "0 10px 30px rgba(124,58,237,0.08)",
-        }}
-      >
-        {/* LOGO */}
-        <div className="flex items-center gap-2.5 px-2 mb-6 pt-1">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-violet-600 text-white">
-            ●●●
+    <aside className="hidden md:flex md:w-64 flex-shrink-0 border-r border-gray-100/80 bg-white/50 backdrop-blur-md">
+      <div className="sticky top-0 flex h-screen w-full flex-col p-5 justify-between">
+        <div className="flex flex-col">
+          {/* LOGO */}
+          <div className="mb-8 flex items-center gap-2.5 px-2 pt-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-sm shadow-violet-200">
+              <Globe className="w-4 h-4" />
+            </div>
+            <span className="text-lg font-bold tracking-tight text-gray-900">
+              Social
+              <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+                Sphere
+              </span>
+            </span>
           </div>
-          <span className="text-base font-extrabold text-gray-900">
-            Social<span className="text-violet-600">Sphere</span>
-          </span>
+
+          {/* NAVIGATION */}
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const isActive = isNavActive(item);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-[14px] font-semibold transition-all duration-200 ${
+                    isActive
+                      ? "bg-violet-50/70 text-violet-600"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  {/* Left Brand Border Ring Accent for active item */}
+                  {isActive && (
+                    <div className="absolute left-0 top-2.5 bottom-2.5 w-1 rounded-r-md bg-violet-600" />
+                  )}
+
+                  <NavIcon
+                    name={item.icon}
+                    className={`w-[18px] h-[18px] transition-colors ${
+                      isActive
+                        ? "text-violet-600"
+                        : "text-gray-400 group-hover:text-gray-600"
+                    }`}
+                  />
+                  <span className="flex-1 text-left">{item.label}</span>
+
+                  {item.badge && (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        isActive
+                          ? "bg-violet-200 text-violet-700"
+                          : "bg-violet-600 text-white"
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* NAVIGATION */}
-        <nav className="space-y-1.5">
-          {navItems.map((item) => {
-            const isActive = isNavActive(item);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all ${
-                  isActive ? "text-white shadow-md" : "text-gray-600 hover:bg-violet-50"
-                }`}
-                style={isActive ? { background: "linear-gradient(135deg,#7C3AED,#6366F1)" } : {}}
-              >
-                <NavIcon name={item.icon} />
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.badge && (
-                  <span
-                    className={`text-[10px] font-bold rounded-full px-2 py-0.5 ${
-                      isActive ? "bg-white/30 text-white" : "bg-violet-600 text-white"
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="my-4 h-px bg-violet-100" />
-
-        {/* PROFILE BUTTON — navigates to /profile/[username] */}
-        <button
-          onClick={handleProfileClick}
-          disabled={userLoading || !user}
-          title={user ? `View @${user.username}'s profile` : "Loading…"}
-          className="flex items-center gap-2.5 px-2 py-2 rounded-2xl hover:bg-violet-50 transition disabled:opacity-50 disabled:cursor-not-allowed w-full text-left"
-        >
-          <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-            {userLoading ? (
-              <span className="animate-spin inline-block w-3 h-3 border border-white/40 border-t-white rounded-full" />
-            ) : (
-              user?.username?.charAt(0).toUpperCase() ?? "?"
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-900 truncate">
-              {userLoading ? "Loading…" : (user?.username ?? "Not signed in")}
-            </p>
-            <p className="text-[11px] text-gray-500 truncate">
-              {user ? `@${user.username}` : ""}
-            </p>
-          </div>
-        </button>
-
-        {/* LOGOUT */}
-        {user && (
+        {/* PROFILE & LOGOUT FOOTEER CONTAINERS */}
+        <div className="mt-auto space-y-2 pt-4 border-t border-gray-100">
+          {/* PROFILE BUTTON */}
           <button
-            onClick={handleLogout}
-            className="mt-2 flex items-center gap-2.5 px-3.5 py-2 rounded-2xl text-sm font-semibold text-red-500 hover:bg-red-50 transition w-full"
+            onClick={handleProfileClick}
+            disabled={userLoading || !user}
+            title={user ? `View @${user.username}'s profile` : "Loading…"}
+            className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span className="w-4 h-4">🚪</span>
-            <span>Logout</span>
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-xs font-bold text-white shadow-inner">
+              {userLoading ? (
+                <span className="inline-block h-3 w-3 animate-spin rounded-full border border-white/40 border-t-white" />
+              ) : (
+                (user?.username?.charAt(0).toUpperCase() ?? "?")
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-gray-900 leading-none mb-1">
+                {userLoading ? "Loading…" : (user?.username ?? "Not signed in")}
+              </p>
+              <p className="truncate text-xs text-gray-400 leading-none">
+                {user ? `@${user.username}` : ""}
+              </p>
+            </div>
           </button>
-        )}
+
+          {/* LOGOUT */}
+          {user && (
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-semibold text-red-500/90 transition-colors hover:bg-red-50 hover:text-red-600"
+            >
+              <LogOut className="w-[18px] h-[18px]" />
+              <span>Logout</span>
+            </button>
+          )}
+        </div>
       </div>
     </aside>
   );
