@@ -163,10 +163,17 @@ export interface FeedPost {
   type: "post" | "share";
 }
 
-export function getFeed() {
-  return apiRequest<FeedPost[]>("/feed/");
+export interface FeedPage {
+  items: FeedPost[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
 }
 
+export function getFeed() {
+  return apiRequest<FeedPage>("/feed/");
+}
 export function getAllPosts() {
   return apiRequest<FeedPost[]>("/posts/");
 }
@@ -310,6 +317,23 @@ export async function uploadAvatar(file: File) {
   return data as { message?: string; avatar_url?: string };
 }
 
+export async function uploadCover(file: File) {
+  const formData = new FormData();
+  formData.append("cover", file);
+
+  const response = await fetch(`${API_BASE}/users/upload_cover`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.detail || "Cover photo upload failed");
+  }
+  return data as { message?: string; cover_url?: string };
+}
+
 // =========================
 // COMMENTS
 // =========================
@@ -390,4 +414,26 @@ export function unsharePost(postId: number) {
   return apiRequest<{ message?: string }>(`/posts/${postId}/share`, {
     method: "DELETE",
   });
+}
+
+// =========================
+// FOLLOWS
+// =========================
+
+export function followUser(userId: number) {
+  return apiRequest<{ message?: string }>(`/follows/${userId}`, {
+    method: "POST",
+  });
+}
+
+export function unfollowUser(userId: number) {
+  return apiRequest<{ message?: string }>(`/follows/${userId}`, {
+    method: "DELETE",
+  });
+}
+
+export function getFollowStatus(userId: number) {
+  return apiRequest<{ is_following: boolean }>(
+    `/follows/status/${userId}`
+  );
 }

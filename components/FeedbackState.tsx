@@ -5,23 +5,28 @@ import { Users, AlertCircle, RefreshCw } from "lucide-react";
 /* ────────────────────── Skeleton card ──────────────────────── */
 export function SkeletonCard() {
   return (
-    <div className="animate-pulse overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/10">
-      <div className="h-24 w-full bg-white/10" />
+    <div
+      className="bg-white rounded-2xl border border-[#EAEAEF] overflow-hidden"
+      style={{ boxShadow: "var(--shadow-card)" }}
+    >
+      {/* Header strip */}
+      <div className="skeleton h-24 w-full rounded-none" />
       <div className="px-5 pb-5 pt-3">
         <div className="flex items-end gap-3">
-          <div className="-mt-10 h-16 w-16 shrink-0 rounded-full bg-white/15 ring-4 ring-[#0A0A12]" />
+          {/* Avatar */}
+          <div className="skeleton -mt-10 h-16 w-16 shrink-0 rounded-full ring-4 ring-white" />
           <div className="flex-1 space-y-2 pt-4">
-            <div className="h-3 w-28 rounded-full bg-white/15" />
-            <div className="h-2.5 w-20 rounded-full bg-white/10" />
+            <div className="skeleton h-3.5 w-28 rounded" />
+            <div className="skeleton h-3 w-20 rounded" />
           </div>
         </div>
         <div className="mt-4 space-y-2">
-          <div className="h-2.5 w-full rounded-full bg-white/10" />
-          <div className="h-2.5 w-3/4 rounded-full bg-white/10" />
+          <div className="skeleton h-3 w-full rounded" />
+          <div className="skeleton h-3 w-3/4 rounded" />
         </div>
         <div className="mt-5 flex gap-2">
-          <div className="h-8 flex-1 rounded-full bg-white/10" />
-          <div className="h-8 flex-1 rounded-full bg-white/10" />
+          <div className="skeleton h-8 flex-1 rounded-xl" />
+          <div className="skeleton h-8 flex-1 rounded-xl" />
         </div>
       </div>
     </div>
@@ -36,22 +41,30 @@ interface ErrorCardProps {
 
 export function ErrorCard({ message, onRetry }: ErrorCardProps) {
   return (
-    <div className="col-span-full flex flex-col items-center justify-center gap-4 rounded-3xl border border-red-500/20 bg-red-500/5 py-16 text-center backdrop-blur-xl shadow-2xl shadow-black/20">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 border border-red-500/20">
-        <AlertCircle className="h-6 w-6 text-red-400" />
+    <div
+      className="col-span-full bg-white rounded-2xl border border-red-100 p-12 text-center"
+      style={{ boxShadow: "var(--shadow-card)" }}
+    >
+      <div className="w-12 h-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center mx-auto mb-3">
+        <AlertCircle className="h-6 w-6 text-red-500" />
       </div>
-      <div>
-        <p className="font-semibold text-gray-200 tracking-wide">
-          Something went wrong
-        </p>
-        <p className="mt-1 text-sm text-gray-400 max-w-sm mx-auto">{message}</p>
-      </div>
+      <p className="text-[14px] font-semibold text-[#111118] mb-1">
+        Something went wrong
+      </p>
+      <p className="text-[13px] text-[#9999AB] max-w-xs mx-auto mb-5 leading-relaxed">
+        {message}
+      </p>
       <button
         type="button"
         onClick={onRetry}
-        className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-gray-300 transition hover:bg-white/10 hover:text-white hover:border-white/20 active:scale-95 cursor-pointer"
+        className="
+          inline-flex items-center gap-2 rounded-full border border-[#EAEAEF]
+          bg-white px-4 py-2 text-[13px] font-medium text-[#6B6B80]
+          transition hover:bg-[#F3EEFF] hover:text-[#7C3AED] hover:border-[#DDD6FE]
+          active:scale-95
+        "
       >
-        <RefreshCw className="h-4 w-4 text-purple-400" />
+        <RefreshCw className="h-3.5 w-3.5" />
         Try again
       </button>
     </div>
@@ -71,12 +84,15 @@ export function EmptyState({
   title = "No users found",
 }: EmptyStateProps) {
   return (
-    <div className="col-span-full flex flex-col items-center justify-center gap-3 rounded-3xl border border-white/10 bg-white/5 py-16 text-center backdrop-blur-xl shadow-xl shadow-black/10">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 border border-white/5">
-        <Users className="h-5 w-5 text-gray-400" />
+    <div
+      className="col-span-full bg-white rounded-2xl border border-[#EAEAEF] p-12 text-center"
+      style={{ boxShadow: "var(--shadow-card)" }}
+    >
+      <div className="w-12 h-12 rounded-full bg-[#F7F7F9] border border-[#EAEAEF] flex items-center justify-center mx-auto mb-3">
+        <Users className="h-5 w-5 text-[#9999AB]" />
       </div>
-      <p className="font-bold text-gray-200 tracking-wide">{title}</p>
-      <p className="text-sm text-gray-400 max-w-xs mx-auto leading-relaxed">
+      <p className="text-[14px] font-semibold text-[#111118] mb-1">{title}</p>
+      <p className="text-[13px] text-[#9999AB] max-w-xs mx-auto leading-relaxed">
         {message
           ? message
           : query

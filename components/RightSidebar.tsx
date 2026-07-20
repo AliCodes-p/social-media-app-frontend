@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { UserPlus, TrendingUp } from "lucide-react";
+import { UserPlus, TrendingUp, Hash } from "lucide-react";
 
 interface SuggestedUser {
   id: number;
@@ -25,96 +25,82 @@ interface RightSidebarProps {
   onSelectTopic?: (tag: string) => void;
 }
 
-const defaultSuggested: SuggestedUser[] = [
-  {
-    id: 1,
-    name: "Hassan Raza",
-    username: "hassandev",
-    avatar_url: "https://picsum.photos/seed/hassan/100/100",
-  },
-  {
-    id: 2,
-    name: "Nouman Sajid",
-    username: "nouman.codes",
-    avatar_url: "https://picsum.photos/seed/nouman/100/100",
-  },
-  {
-    id: 3,
-    name: "Sara Khan",
-    username: "sarakdesigns",
-    avatar_url: "https://picsum.photos/seed/sara/100/100",
-  },
-];
-
-const defaultTrending: TrendingTopic[] = [
-  { tag: "#NextJS15", posts: "12.4k posts" },
-  { tag: "#UIUXDesign", posts: "8.1k posts" },
-  { tag: "#FastAPI", posts: "5.6k posts" },
-  { tag: "#TailwindCSS", posts: "3.2k posts" },
-];
-
 export default function RightSidebar({
-  suggestedUsers = defaultSuggested,
-  trendingTopics = defaultTrending,
+  suggestedUsers = [],
+  trendingTopics = [],
   showSuggested = true,
   showTrending = true,
   onFollowUser,
   onSelectTopic,
 }: RightSidebarProps) {
   return (
-    <aside className="hidden lg:block w-72 shrink-0">
-      <div className="sticky top-5 space-y-5">
-        {/* Suggested users */}
+    <aside className="hidden lg:block w-[280px] shrink-0 pl-5 py-5">
+      <div className="sticky top-5 space-y-4">
+
+        {/* ── Suggested for you ── */}
         {showSuggested && suggestedUsers.length > 0 && (
           <div
-            className="bg-white rounded-2xl p-5 border border-gray-100/70"
-            style={{
-              boxShadow:
-                "0 1px 2px rgba(0,0,0,0.02), 0 8px 24px rgba(124,58,237,0.05)",
-            }}
+            className="bg-white rounded-2xl border border-[#EAEAEF] overflow-hidden"
+            style={{ boxShadow: "var(--shadow-card)" }}
           >
-            <h3 className="flex items-center gap-2 text-[14px] font-bold text-gray-900">
-              <UserPlus className="h-4 w-4 text-violet-500" />
-              Suggested for you
-            </h3>
-            <div className="mt-4 space-y-3.5">
+            {/* Header */}
+            <div className="px-4 pt-4 pb-3 border-b border-[#F0F0F5]">
+              <h3 className="flex items-center gap-2 text-[12px] font-semibold text-[#9999AB] uppercase tracking-wider">
+                <UserPlus className="h-3.5 w-3.5" />
+                Suggested for you
+              </h3>
+            </div>
+
+            {/* User list */}
+            <div className="divide-y divide-[#F0F0F5]">
               {suggestedUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between gap-3"
+                  className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-[#FAFAFA] transition-colors group"
                 >
+                  {/* Avatar + info */}
                   <Link
                     href={`/profile/${user.username}`}
-                    className="flex items-center gap-2.5 min-w-0 flex-1 group"
+                    className="flex items-center gap-3 min-w-0 flex-1"
                   >
-                    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-violet-600 to-indigo-500 shadow-sm">
+                    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-indigo-500">
                       {user.avatar_url ? (
                         <Image
                           src={user.avatar_url}
                           alt={user.name}
                           fill
                           className="object-cover"
+                          sizes="36px"
                         />
                       ) : (
-                        <span className="flex h-full w-full items-center justify-center text-xs font-bold text-white">
+                        <span className="flex h-full w-full items-center justify-center text-[13px] font-bold text-white">
                           {user.username.charAt(0).toUpperCase()}
                         </span>
                       )}
                     </div>
+
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-gray-800 group-hover:text-violet-600 transition-colors leading-tight mb-0.5">
+                      <p className="truncate text-[13px] font-semibold text-[#111118] group-hover:text-[#7C3AED] transition-colors leading-tight">
                         {user.name}
                       </p>
-                      <p className="truncate text-xs text-gray-400 leading-none">
+                      <p className="truncate text-[12px] text-[#9999AB] leading-tight mt-0.5">
                         @{user.username}
                       </p>
                     </div>
                   </Link>
+
+                  {/* View/Follow button */}
                   <Link
                     href={`/profile/${user.username}`}
-                    className="shrink-0 rounded-full border border-violet-100 bg-violet-50/50 px-3 py-1 text-xs font-semibold text-violet-600 transition-all duration-200 hover:bg-violet-600 hover:text-white hover:border-violet-600"
+                    className="
+                      shrink-0 rounded-full border border-[#EAEAEF] bg-white
+                      px-3 py-1 text-[12px] font-semibold text-[#111118]
+                      transition-all duration-150
+                      hover:border-[#7C3AED] hover:bg-[#7C3AED] hover:text-white
+                      active:scale-95
+                    "
                   >
-                    View
+                    Follow
                   </Link>
                 </div>
               ))}
@@ -122,36 +108,54 @@ export default function RightSidebar({
           </div>
         )}
 
-        {/* Trending */}
+        {/* ── Trending topics ── */}
         {showTrending && trendingTopics.length > 0 && (
           <div
-            className="bg-white rounded-2xl p-5 border border-gray-100/70"
-            style={{
-              boxShadow:
-                "0 1px 2px rgba(0,0,0,0.02), 0 8px 24px rgba(124,58,237,0.05)",
-            }}
+            className="bg-white rounded-2xl border border-[#EAEAEF] overflow-hidden"
+            style={{ boxShadow: "var(--shadow-card)" }}
           >
-            <h3 className="flex items-center gap-2 text-[14px] font-bold text-gray-900">
-              <TrendingUp className="h-4 w-4 text-violet-500" />
-              Trending now
-            </h3>
-            <div className="mt-3 space-y-1">
-              {trendingTopics.map((topic) => (
+            {/* Header */}
+            <div className="px-4 pt-4 pb-3 border-b border-[#F0F0F5]">
+              <h3 className="flex items-center gap-2 text-[12px] font-semibold text-[#9999AB] uppercase tracking-wider">
+                <TrendingUp className="h-3.5 w-3.5" />
+                Trending now
+              </h3>
+            </div>
+
+            {/* Topics list */}
+            <div className="divide-y divide-[#F0F0F5]">
+              {trendingTopics.map((topic, idx) => (
                 <button
                   key={topic.tag}
                   type="button"
                   onClick={() => onSelectTopic && onSelectTopic(topic.tag)}
-                  className="block w-full rounded-xl px-2.5 py-2 text-left transition-all duration-200 hover:bg-gray-50 group"
+                  className="
+                    flex items-center gap-3 w-full px-4 py-3 text-left
+                    hover:bg-[#FAFAFA] transition-colors group
+                  "
                 >
-                  <p className="text-sm font-bold text-gray-800 group-hover:text-violet-600 transition-colors">
-                    {topic.tag}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{topic.posts}</p>
+                  <div className="w-7 h-7 rounded-lg bg-[#F3EEFF] flex items-center justify-center shrink-0">
+                    <Hash className="w-3.5 h-3.5 text-[#7C3AED]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold text-[#111118] group-hover:text-[#7C3AED] transition-colors truncate">
+                      {topic.tag}
+                    </p>
+                    <p className="text-[12px] text-[#9999AB] mt-0.5">{topic.posts}</p>
+                  </div>
+                  <span className="text-[11px] font-bold text-[#CCCCDA] shrink-0">
+                    #{idx + 1}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
         )}
+
+        {/* Footer note */}
+        <p className="text-[11px] text-[#CCCCDA] px-1 leading-relaxed">
+          SocialSphere · Connect · Share · Grow
+        </p>
       </div>
     </aside>
   );

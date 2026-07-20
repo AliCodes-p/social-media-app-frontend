@@ -3,16 +3,32 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Mail, Search, Send, Sparkles } from "lucide-react";
+import { Mail, Search, ChevronRight, Sparkles } from "lucide-react";
 import { getAllUsers, UserCardResponse } from "@/lib/api";
 
 interface MessagesTabProps {
   currentUserId: number;
 }
 
+function MessageSkeleton() {
+  return (
+    <div className="divide-y divide-[#F0F0F5]">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="flex items-center gap-3 px-5 py-3.5">
+          <div className="skeleton w-10 h-10 rounded-full shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="skeleton h-3.5 w-32 rounded" />
+            <div className="skeleton h-3 w-20 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function MessagesTab({ currentUserId }: MessagesTabProps) {
-  const [users, setUsers] = useState<UserCardResponse[]>([]);
-  const [query, setQuery] = useState("");
+  const [users, setUsers]   = useState<UserCardResponse[]>([]);
+  const [query, setQuery]   = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,92 +47,92 @@ export default function MessagesTab({ currentUserId }: MessagesTabProps) {
     : users;
 
   return (
-    <div className="space-y-4">
-      {/* Messages Shell Wrapper */}
-      <div className="rounded-3xl border border-white/80 bg-white/60 backdrop-blur-xl shadow-xl shadow-violet-900/5 overflow-hidden">
-        {/* Header section */}
-        <div className="flex items-center gap-2 border-b border-violet-100 px-5 py-4 bg-white/40">
-          <Mail className="h-5 w-5 text-violet-600" />
-          <h2 className="text-base font-bold text-gray-950 tracking-wide">
+    <div className="space-y-3">
+      {/* Main Messages card */}
+      <div
+        className="bg-white rounded-2xl border border-[#EAEAEF] overflow-hidden"
+        style={{ boxShadow: "var(--shadow-card)" }}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#F0F0F5]">
+          <div className="w-8 h-8 rounded-full bg-[#F3EEFF] flex items-center justify-center">
+            <Mail className="h-4 w-4 text-[#7C3AED]" />
+          </div>
+          <h2 className="text-[15px] font-semibold text-[#111118] flex-1">
             Messages
           </h2>
         </div>
 
-        {/* Conversation Filtering Bar */}
-        <div className="border-b border-violet-50 px-5 py-3.5">
+        {/* Search bar */}
+        <div className="px-5 py-3 border-b border-[#F0F0F5]">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9999AB] pointer-events-none" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search conversations..."
-              className="w-full rounded-xl border border-violet-100 bg-violet-50/50 py-2 pl-10 pr-4 text-sm text-gray-950 placeholder-gray-400 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-500/10"
+              placeholder="Search conversations…"
+              className="
+                w-full rounded-xl border border-[#EAEAEF] bg-[#F7F7F9]
+                py-2 pl-9 pr-4 text-[13px] text-[#111118] placeholder-[#9999AB]
+                outline-none transition
+                focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/10 focus:bg-white
+              "
             />
           </div>
         </div>
 
-        {/* Content Router Blocks */}
+        {/* Content */}
         {loading ? (
-          <div className="px-5 py-16 text-center">
-            <div className="mx-auto h-5 w-5 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
-            <p className="mt-3 text-sm text-gray-500 font-medium">
-              Syncing inbox...
-            </p>
-          </div>
+          <MessageSkeleton />
         ) : filtered.length === 0 ? (
-          <div className="px-5 py-14 text-center max-w-sm mx-auto">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-violet-50 border border-violet-100">
-              <Mail className="h-5 w-5 text-violet-500" />
+          <div className="px-5 py-12 text-center">
+            <div className="w-12 h-12 rounded-full bg-[#F3EEFF] flex items-center justify-center mx-auto mb-3">
+              <Mail className="h-5 w-5 text-[#7C3AED]" />
             </div>
-            <p className="text-sm font-bold text-gray-950 tracking-wide">
+            <p className="text-[14px] font-semibold text-[#111118] mb-1">
               No conversations yet
             </p>
-            <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
-              Direct messaging is coming soon. Visit profiles to connect with
-              other creators in the meantime.
+            <p className="text-[13px] text-[#9999AB] max-w-xs mx-auto leading-relaxed">
+              Direct messaging is coming soon. Visit profiles to connect in the meantime.
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-violet-50">
+          <ul className="divide-y divide-[#F0F0F5]">
             {filtered.map((user) => (
               <li key={user.id}>
                 <Link
                   href={`/profile/${user.username}`}
-                  className="group flex items-center gap-3 px-5 py-4 transition duration-200 hover:bg-white/80"
+                  className="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[#FAFAFA]"
                 >
-                  {/* Profile Avatar Frame */}
-                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 shadow-sm">
+                  {/* Avatar */}
+                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-indigo-500">
                     {user.avatar_url ? (
                       <Image
                         src={user.avatar_url}
                         alt=""
                         fill
-                        sizes="44px"
+                        sizes="40px"
                         className="object-cover"
                       />
                     ) : (
-                      <span className="flex h-full w-full items-center justify-center text-sm font-bold text-white">
+                      <span className="flex h-full w-full items-center justify-center text-[13px] font-bold text-white">
                         {user.username.charAt(0).toUpperCase()}
                       </span>
                     )}
                   </div>
 
-                  {/* Metadata labels */}
+                  {/* Info */}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-gray-950 group-hover:text-violet-600 transition">
+                    <p className="truncate text-[14px] font-semibold text-[#111118] group-hover:text-[#7C3AED] transition-colors leading-tight">
                       {user.username}
                     </p>
-                    <p className="truncate text-xs text-gray-400 mt-0.5">
-                      @{user.username} ·{" "}
-                      <span className="text-violet-500/80 group-hover:text-violet-600 font-medium transition">
-                        Tap to open profile
-                      </span>
+                    <p className="truncate text-[12px] text-[#9999AB] mt-0.5">
+                      @{user.username}
                     </p>
                   </div>
 
-                  {/* Action Link Arrow */}
-                  <Send className="h-3.5 w-3.5 shrink-0 text-gray-400 transition duration-200 -translate-x-1 group-hover:translate-x-0 group-hover:text-violet-600" />
+                  <ChevronRight className="h-4 w-4 text-[#CCCCDA] shrink-0 group-hover:text-[#7C3AED] transition-colors" />
                 </Link>
               </li>
             ))}
@@ -124,15 +140,16 @@ export default function MessagesTab({ currentUserId }: MessagesTabProps) {
         )}
       </div>
 
-      {/* Notice info banner */}
-      <div className="rounded-2xl border border-white/80 bg-white/60 px-5 py-4 backdrop-blur-md shadow-md shadow-violet-900/5">
-        <p className="text-xs text-gray-500 leading-relaxed flex items-start gap-2.5">
-          <Sparkles className="h-4 w-4 text-violet-500 shrink-0 mt-0.5" />
-          <span>
-            Real-time chat infrastructure requires an active backend WebSocket
-            gateway. This module presents index targets to view active accounts
-            while that messaging pipeline is deployed.
-          </span>
+      {/* Info banner */}
+      <div
+        className="bg-white rounded-2xl border border-[#EAEAEF] px-4 py-3.5 flex items-start gap-3"
+        style={{ boxShadow: "var(--shadow-card)" }}
+      >
+        <div className="w-7 h-7 rounded-lg bg-[#F3EEFF] flex items-center justify-center shrink-0 mt-0.5">
+          <Sparkles className="h-3.5 w-3.5 text-[#7C3AED]" />
+        </div>
+        <p className="text-[12px] text-[#9999AB] leading-relaxed">
+          Real-time messaging requires an active WebSocket gateway. This shows active accounts while the pipeline is deployed.
         </p>
       </div>
     </div>

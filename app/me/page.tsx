@@ -12,6 +12,7 @@ import {
   updateMyProfile,
   getMyArchivedPosts,
   uploadAvatar,
+  uploadCover,
   getFeed,
   getAllUsers,
   UserCardResponse,
@@ -57,6 +58,7 @@ export default function MyProfilePage() {
   const [toast, setToast] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const showToast = (message: string) => {
     setToast(message);
@@ -81,7 +83,8 @@ export default function MyProfilePage() {
 
       setUsersMap(lookup);
 
-      const feed = await getFeed().catch(() => []);
+      const feedPage = await getFeed();
+      const feed = feedPage.items;
 
       const mappedActive: Post[] = feed
         .filter((post) => post.user_id === myProfile.id)
@@ -188,6 +191,28 @@ export default function MyProfilePage() {
     }
   };
 
+  const handleCoverClick = () => {
+    coverInputRef.current?.click();
+  };
+
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    try {
+      showToast("Uploading cover...");
+
+      await uploadCover(file);
+
+      showToast("Cover photo updated");
+
+      await loadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Upload failed");
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -213,10 +238,10 @@ export default function MyProfilePage() {
           list.map((p) =>
             p.id === id
               ? {
-                  ...p,
-                  liked: false,
-                  likes: Math.max(0, p.likes - 1),
-                }
+                ...p,
+                liked: false,
+                likes: Math.max(0, p.likes - 1),
+              }
               : p,
           );
 
@@ -232,10 +257,10 @@ export default function MyProfilePage() {
           list.map((p) =>
             p.id === id
               ? {
-                  ...p,
-                  liked: true,
-                  likes: p.likes + 1,
-                }
+                ...p,
+                liked: true,
+                likes: p.likes + 1,
+              }
               : p,
           );
 
@@ -294,9 +319,9 @@ export default function MyProfilePage() {
         list.map((p) =>
           p.id === id
             ? {
-                ...p,
-                content: newContent,
-              }
+              ...p,
+              content: newContent,
+            }
             : p,
         );
 
@@ -339,9 +364,9 @@ export default function MyProfilePage() {
         list.map((post) =>
           post.id === postId
             ? {
-                ...post,
-                comments: mappedComments,
-              }
+              ...post,
+              comments: mappedComments,
+            }
             : post,
         );
 
@@ -438,20 +463,16 @@ export default function MyProfilePage() {
         background: "linear-gradient(135deg,#FAFAFF,#F3F0FF,#EEF2FF)",
       }}
     >
+      {/* Toast animation + micro-interaction keyframes */}
+      <style>{`
+        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        .toast-pop { animation: toastIn 0.25s ease both; }
+      `}</style>
+
       {/* Toast */}
       {toast && (
         <div
-          className="
-          fixed bottom-6 left-1/2
-          -translate-x-1/2
-          z-50
-          rounded-2xl
-          px-5 py-3
-          text-sm
-          font-semibold
-          text-white
-          shadow-xl
-          "
+          className="toast-pop fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-2xl px-5 py-3 text-sm font-semibold text-white shadow-xl"
           style={{
             background: "linear-gradient(90deg,#7C3AED,#6366F1)",
           }}
@@ -481,7 +502,7 @@ export default function MyProfilePage() {
             "
           >
             <div className="min-w-0">
-              .{/* Profile Glass Card */}
+              {/* Profile Glass Card */}
               <section
                 className="
                 overflow-hidden
@@ -494,11 +515,14 @@ export default function MyProfilePage() {
               >
                 {/* Cover */}
                 <div
+                  onClick={handleCoverClick}
                   className="
+                  group
                   relative
                   h-44
                   w-full
                   sm:h-56
+                  cursor-pointer
                   overflow-hidden
                   "
                 >
@@ -528,6 +552,38 @@ export default function MyProfilePage() {
                     from-white/40
                     via-transparent
                     "
+                  />
+
+                  {/* Hover Camera for Cover */}
+                  <div
+                    className="
+                    absolute
+                    inset-0
+                    flex
+                    items-center
+                    justify-center
+                    bg-black/30
+                    opacity-0
+                    transition
+                    group-hover:opacity-100
+                    z-10
+                    "
+                  >
+                    <Camera
+                      className="
+                      h-8
+                      w-8
+                      text-white
+                      "
+                    />
+                  </div>
+
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverChange}
+                    className="hidden"
                   />
                 </div>
 
@@ -856,6 +912,19 @@ export default function MyProfilePage() {
                   )}
                 </div>
               </section>
+
+              {/* Profile Stats Bar */}
+              <div className="mt-4 flex gap-6 px-1">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-gray-900">{activePosts.length}</p>
+                  <p className="text-xs font-medium text-gray-500 mt-0.5">Posts</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-gray-900">{archivedPosts.length}</p>
+                  <p className="text-xs font-medium text-gray-500 mt-0.5">Archived</p>
+                </div>
+              </div>
+
               {/* Tabs */}
               <nav
                 className="
@@ -881,11 +950,10 @@ export default function MyProfilePage() {
                   text-sm
                   font-semibold
                   transition
-                  ${
-                    activeTab === "posts"
+                  ${activeTab === "posts"
                       ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white"
                       : "text-gray-500 hover:bg-white"
-                  }
+                    }
                   `}
                 >
                   My Posts ({activePosts.length})
@@ -901,11 +969,10 @@ export default function MyProfilePage() {
                   text-sm
                   font-semibold
                   transition
-                  ${
-                    activeTab === "archived"
+                  ${activeTab === "archived"
                       ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white"
                       : "text-gray-500 hover:bg-white"
-                  }
+                    }
                   `}
                 >
                   Archived ({archivedPosts.length})

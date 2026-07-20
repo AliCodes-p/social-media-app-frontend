@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, Users, FileText, ImageIcon, Sparkles } from "lucide-react";
+import { Search, Users, FileText, ImageIcon, Sparkles, Hash } from "lucide-react";
 import {
   getAllPosts,
   getAllUsers,
@@ -20,18 +20,36 @@ interface ExploreTabProps {
   onSelectHashtag?: (tag: string) => void;
 }
 
+function ExploreSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="bg-white rounded-2xl border border-[#EAEAEF] p-4 flex items-center gap-3"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <div className="skeleton w-12 h-12 rounded-full shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="skeleton h-3.5 w-24 rounded" />
+            <div className="skeleton h-3 w-16 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ExploreTab({
   currentUserId,
   onSelectHashtag,
 }: ExploreTabProps) {
-  const [section, setSection] = useState<ExploreSection>("posts");
-  const [query, setQuery] = useState("");
-  const [users, setUsers] = useState<UserCardResponse[]>([]);
-  const [posts, setPosts] = useState<FeedPost[]>([]);
-  const [hashtags, setHashtags] = useState<{ tag: string; count: number }[]>(
-    [],
-  );
-  const [loading, setLoading] = useState(true);
+  const [section, setSection]   = useState<ExploreSection>("posts");
+  const [query, setQuery]       = useState("");
+  const [users, setUsers]       = useState<UserCardResponse[]>([]);
+  const [posts, setPosts]       = useState<FeedPost[]>([]);
+  const [hashtags, setHashtags] = useState<{ tag: string; count: number }[]>([]);
+  const [loading, setLoading]   = useState(true);
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
   const loadData = useCallback(
@@ -70,41 +88,44 @@ export default function ExploreTab({
     onSelectHashtag?.(tag);
   };
 
-  const sections: {
-    id: ExploreSection;
-    label: string;
-    icon: React.ReactNode;
-  }[] = [
-    { id: "posts", label: "Posts", icon: <FileText className="h-3.5 w-3.5" /> },
-    { id: "people", label: "People", icon: <Users className="h-3.5 w-3.5" /> },
-    {
-      id: "media",
-      label: "Media",
-      icon: <ImageIcon className="h-3.5 w-3.5" />,
-    },
+  const sections: { id: ExploreSection; label: string; icon: React.ReactNode }[] = [
+    { id: "posts",  label: "Posts",  icon: <FileText  className="h-4 w-4" /> },
+    { id: "people", label: "People", icon: <Users     className="h-4 w-4" /> },
+    { id: "media",  label: "Media",  icon: <ImageIcon className="h-4 w-4" /> },
   ];
 
   return (
-    <div className="space-y-4">
-      {/* Search Input Container */}
-      <div className="rounded-3xl border border-white/80 bg-white/60 p-4 backdrop-blur-xl shadow-xl shadow-violet-900/5">
+    <div className="space-y-3">
+      {/* Search */}
+      <div
+        className="bg-white rounded-2xl border border-[#EAEAEF] p-4"
+        style={{ boxShadow: "var(--shadow-card)" }}
+      >
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9999AB] pointer-events-none" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search people or topics..."
-            className="w-full rounded-2xl border border-violet-100 bg-violet-50/50 py-3 pl-11 pr-4 text-sm text-gray-950 placeholder-gray-400 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-500/10"
+            placeholder="Search people or topics…"
+            className="
+              w-full rounded-xl border border-[#EAEAEF] bg-[#F7F7F9]
+              py-2.5 pl-10 pr-4 text-[14px] text-[#111118] placeholder-[#9999AB]
+              outline-none transition
+              focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/10 focus:bg-white
+            "
           />
         </div>
       </div>
 
-      {/* Trending Topics Wrapper */}
+      {/* Trending hashtags */}
       {hashtags.length > 0 && (
-        <div className="rounded-3xl border border-white/80 bg-white/60 p-5 backdrop-blur-xl shadow-xl shadow-violet-900/5">
-          <h3 className="mb-3 text-sm font-bold text-gray-950 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-violet-600" />
+        <div
+          className="bg-white rounded-2xl border border-[#EAEAEF] p-4"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <h3 className="flex items-center gap-2 text-[12px] font-semibold text-[#9999AB] uppercase tracking-wider mb-3">
+            <Sparkles className="h-3.5 w-3.5" />
             Trending topics
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -113,17 +134,19 @@ export default function ExploreTab({
                 key={tag}
                 type="button"
                 onClick={() => handleTagClick(tag)}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition tracking-wide ${
-                  activeTag === tag
-                    ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/20"
-                    : "bg-white/80 border border-violet-100 text-gray-700 hover:bg-violet-50 hover:text-violet-700 hover:border-violet-200"
-                }`}
+                className={`
+                  flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold
+                  transition-all duration-150 active:scale-95
+                  ${activeTag === tag
+                    ? "bg-[#7C3AED] text-white shadow-sm"
+                    : "bg-[#F7F7F9] border border-[#EAEAEF] text-[#6B6B80] hover:bg-[#F3EEFF] hover:text-[#7C3AED] hover:border-[#DDD6FE]"
+                  }
+                `}
               >
-                #{tag.replace("#", "")} ·{" "}
-                <span
-                  className={activeTag === tag ? "opacity-90" : "text-gray-400"}
-                >
-                  {count}
+                <Hash className="h-3 w-3" />
+                {tag.replace("#", "")}
+                <span className={activeTag === tag ? "opacity-75" : "text-[#9999AB]"}>
+                  · {count}
                 </span>
               </button>
             ))}
@@ -131,18 +154,24 @@ export default function ExploreTab({
         </div>
       )}
 
-      {/* Section Tabs Switcher */}
-      <div className="flex gap-1.5 rounded-2xl border border-white/80 bg-white/60 p-1 backdrop-blur-xl max-w-xs shadow-sm">
+      {/* Section tabs */}
+      <div
+        className="bg-white rounded-2xl border border-[#EAEAEF] p-1 flex gap-1"
+        style={{ boxShadow: "var(--shadow-card)" }}
+      >
         {sections.map((s) => (
           <button
             key={s.id}
             type="button"
             onClick={() => setSection(s.id)}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition duration-200 ${
-              section === s.id
-                ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/10"
-                : "text-gray-500 hover:bg-violet-50/60 hover:text-gray-800"
-            }`}
+            className={`
+              flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2
+              text-[13px] font-semibold transition-all duration-150 active:scale-95
+              ${section === s.id
+                ? "bg-[#7C3AED] text-white shadow-sm"
+                : "text-[#9999AB] hover:text-[#6B6B80] hover:bg-[#F7F7F9]"
+              }
+            `}
           >
             {s.icon}
             {s.label}
@@ -150,34 +179,38 @@ export default function ExploreTab({
         ))}
       </div>
 
-      {/* Grid Content Views */}
+      {/* Content */}
       {loading ? (
-        <div className="rounded-3xl border border-white/80 bg-white/60 p-16 text-center backdrop-blur-xl shadow-xl shadow-violet-900/5">
-          <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
-          <p className="mt-3 text-sm text-gray-500 font-medium">
-            Discovering content...
-          </p>
-        </div>
+        <ExploreSkeleton />
       ) : section === "people" ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {users.length === 0 ? (
-            <p className="col-span-full text-center text-sm text-gray-400 py-12 rounded-3xl border border-white/80 bg-white/60 backdrop-blur-md">
-              No people found.
-            </p>
+            <div
+              className="col-span-full bg-white rounded-2xl border border-[#EAEAEF] p-12 text-center"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <Users className="w-8 h-8 text-[#CCCCDA] mx-auto mb-3" />
+              <p className="text-[14px] text-[#9999AB]">No people found.</p>
+            </div>
           ) : (
             users.map((user) => (
               <Link
                 key={user.id}
                 href={`/profile/${user.username}`}
-                className="group border border-white/80 bg-white/60 flex items-center gap-3 rounded-2xl p-4 backdrop-blur-xl transition hover:border-violet-300 hover:bg-white hover:shadow-xl hover:shadow-violet-900/5 shadow-sm"
+                className="
+                  group bg-white rounded-2xl border border-[#EAEAEF]
+                  flex items-center gap-3 p-4
+                  transition-all duration-150 hover:-translate-y-0.5 hover:border-[#DDD6FE]
+                "
+                style={{ boxShadow: "var(--shadow-card)" }}
               >
-                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 shadow-sm">
+                <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-indigo-500">
                   {user.avatar_url ? (
                     <Image
                       src={user.avatar_url}
                       alt=""
                       fill
-                      sizes="48px"
+                      sizes="44px"
                       className="object-cover"
                     />
                   ) : (
@@ -187,10 +220,10 @@ export default function ExploreTab({
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-gray-950 group-hover:text-violet-600 transition">
+                  <p className="truncate text-[14px] font-semibold text-[#111118] group-hover:text-[#7C3AED] transition-colors">
                     {user.username}
                   </p>
-                  <p className="truncate text-xs text-gray-500">
+                  <p className="truncate text-[12px] text-[#9999AB]">
                     {user.bio ?? `@${user.username}`}
                   </p>
                 </div>
@@ -199,17 +232,21 @@ export default function ExploreTab({
           )}
         </div>
       ) : section === "media" ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
           {mediaPosts.length === 0 ? (
-            <p className="col-span-full text-center text-sm text-gray-400 py-12 rounded-3xl border border-white/80 bg-white/60 backdrop-blur-md">
-              No media posts yet.
-            </p>
+            <div
+              className="col-span-full bg-white rounded-2xl border border-[#EAEAEF] p-12 text-center"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <ImageIcon className="w-8 h-8 text-[#CCCCDA] mx-auto mb-3" />
+              <p className="text-[14px] text-[#9999AB]">No media posts yet.</p>
+            </div>
           ) : (
             mediaPosts.map((post) => (
               <Link
                 key={post.post_id}
                 href={`/post/${post.post_id}`}
-                className="group relative aspect-square overflow-hidden rounded-2xl border border-white/80 bg-white/60 shadow-md"
+                className="group relative aspect-square overflow-hidden rounded-xl border border-[#EAEAEF] bg-[#F7F7F9]"
               >
                 {post.image_url && (
                   <Image
@@ -217,11 +254,11 @@ export default function ExploreTab({
                     alt=""
                     fill
                     sizes="(max-width: 640px) 50vw, 33vw"
-                    className="object-cover transition duration-300 group-hover:scale-105"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 transition duration-200 group-hover:opacity-100" />
-                <p className="absolute bottom-3 left-3 right-3 line-clamp-2 text-xs font-medium text-white opacity-0 transition duration-200 group-hover:opacity-100">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 transition duration-200 group-hover:opacity-100" />
+                <p className="absolute bottom-2.5 left-2.5 right-2.5 line-clamp-2 text-[11px] font-medium text-white opacity-0 transition duration-200 group-hover:opacity-100">
                   {post.content}
                 </p>
               </Link>
@@ -229,33 +266,42 @@ export default function ExploreTab({
           )}
         </div>
       ) : (
+        // Posts tab
         <div className="space-y-3">
           {filteredPosts.length === 0 ? (
-            <p className="text-center text-sm text-gray-400 py-12 rounded-3xl border border-white/80 bg-white/60 backdrop-blur-md">
-              No posts found.
-            </p>
+            <div
+              className="bg-white rounded-2xl border border-[#EAEAEF] p-12 text-center"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <FileText className="w-8 h-8 text-[#CCCCDA] mx-auto mb-3" />
+              <p className="text-[14px] text-[#9999AB]">No posts found.</p>
+            </div>
           ) : (
             filteredPosts.map((post) => (
               <Link
                 key={post.post_id}
                 href={`/post/${post.post_id}`}
-                className="block border border-white/80 bg-white/60 rounded-2xl p-4 backdrop-blur-xl transition hover:border-violet-300 hover:bg-white hover:shadow-xl hover:shadow-violet-900/5 shadow-sm"
+                className="
+                  block bg-white rounded-2xl border border-[#EAEAEF] p-4
+                  transition-all duration-150 hover:-translate-y-0.5 hover:border-[#DDD6FE]
+                "
+                style={{ boxShadow: "var(--shadow-card)" }}
               >
-                <p className="line-clamp-3 text-sm leading-relaxed text-gray-800">
+                <p className="line-clamp-3 text-[14px] leading-relaxed text-[#2D2D3A]">
                   {post.content}
                 </p>
                 {post.image_url && (
-                  <div className="relative mt-3 h-48 w-full overflow-hidden rounded-xl border border-violet-100 bg-violet-50/30">
+                  <div className="relative mt-3 h-44 w-full overflow-hidden rounded-xl border border-[#EAEAEF] bg-[#F7F7F9]">
                     <Image
                       src={post.image_url}
                       alt=""
                       fill
-                      sizes="(max-width: 1024px) 100vw, 60vw"
+                      sizes="600px"
                       className="object-cover"
                     />
                   </div>
                 )}
-                <p className="mt-3 text-xs font-medium text-gray-400 tracking-wider">
+                <p className="mt-3 text-[12px] text-[#9999AB]">
                   {new Date(post.created_at).toLocaleDateString(undefined, {
                     year: "numeric",
                     month: "short",

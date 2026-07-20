@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { Edit, Sparkles, Terminal } from "lucide-react";
+import { Edit, Sparkles } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import RightSidebar from "@/components/RightSidebar";
 import PostCard from "@/components/PostCard";
@@ -29,6 +29,9 @@ import {
   updateComment,
   deleteComment,
   CommentResponse,
+  followUser,
+  unfollowUser,
+  getFollowStatus,
 } from "@/lib/api";
 
 type ProfileTab = "posts" | "media";
@@ -53,6 +56,8 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("posts");
   const [toast, setToast] = useState<string | null>(null);
 
+  const [isFollowing, setIsFollowing] = useState(false);
+
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2200);
@@ -75,6 +80,15 @@ export default function ProfilePage() {
         setCurrentUserId(me?.id);
         setCurrentUserInitial(me?.username?.charAt(0) ?? "U");
 
+        if (me && me.id !== profileData.id) {
+          const status = await getFollowStatus(profileData.id);
+          setIsFollowing(status.is_following);
+        }
+
+        setIsMe(me?.username === username);
+        setCurrentUserId(me?.id);
+        setCurrentUserInitial(me?.username?.charAt(0) ?? "U");
+
         const allUsers = await getAllUsers().catch(
           () => [] as UserCardResponse[],
         );
@@ -85,7 +99,8 @@ export default function ProfilePage() {
         });
         setUsersMap(lookup);
 
-        const feed = await getFeed().catch(() => [] as FeedPost[]);
+        const feedPage = await getFeed();
+        const feed = feedPage.items;
 
         const userPosts = feed
           .filter((p) => p.user_id === profileData.id)
@@ -154,7 +169,8 @@ export default function ProfilePage() {
     if (!user) return;
 
     try {
-      const feed = await getFeed();
+      const feedPage = await getFeed();
+      const feed = feedPage.items;
 
       const refreshedPosts = feed
         .filter((p) => p.user_id === user.id)
@@ -201,26 +217,6 @@ export default function ProfilePage() {
       await refreshProfilePosts();
     } catch {
       showToast("Like action failed");
-    }
-  };
-
-  const handleShare = async (post: Post) => {
-    try {
-      await sharePost(Number(post.id));
-      await refreshProfilePosts();
-      showToast("Post shared!");
-    } catch {
-      showToast("Share failed");
-    }
-  };
-
-  const handleUnshare = async (post: Post) => {
-    try {
-      await unsharePost(Number(post.id));
-      await refreshProfilePosts();
-      showToast("Post unshared");
-    } catch {
-      showToast("Unshare failed");
     }
   };
 
@@ -306,6 +302,27 @@ export default function ProfilePage() {
     }
   };
 
+  const handleFollow =
+    async (userId: number) => {
+      try {
+        await followUser(userId);
+        setIsFollowing(true);
+        showToast("User followed");
+      } catch {
+        showToast("Follow failed");
+      }
+    };
+
+  const handleUnfollow = async (userId: number) => {
+    try {
+      await unfollowUser(userId);
+      setIsFollowing(false);
+      showToast("User unfollowed");
+    } catch {
+      showToast("Unfollow failed");
+    }
+  };
+
   const visiblePosts =
     activeTab === "media"
       ? posts.filter((p) => p.imageUrl && !p.archived)
@@ -346,6 +363,12 @@ export default function ProfilePage() {
           "linear-gradient(135deg, #FAFAFF 0%, #F3F0FF 50%, #EEF2FF 100%)",
       }}
     >
+      {/* Toast animation keyframes */}
+      <style>{`
+        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        .toast-pop { animation: toastIn 0.25s ease both; }
+      `}</style>
+
       {/* Soft Decorative Ambient Blurs */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -left-40 -top-40 h-[28rem] w-[28rem] rounded-full bg-violet-400/10 blur-[120px]" />
@@ -354,8 +377,7 @@ export default function ProfilePage() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-xl shadow-violet-900/20 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <Terminal className="h-4 w-4" />
+        <div className="toast-pop fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-xl shadow-violet-900/20">
           {toast}
         </div>
       )}
@@ -403,7 +425,7 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Edit Profile Action Toggle */}
-                    {isMe && (
+                    {isMe ? (
                       <button
                         type="button"
                         onClick={() => router.push("/me")}
@@ -411,6 +433,22 @@ export default function ProfilePage() {
                       >
                         <Edit className="h-4 w-4" />
                         Edit Profile
+                      </button>
+                    ) : isFollowing ? (
+                      <button
+                        type="button"
+                        onClick={() => handleUnfollow(user.id)}
+                        className="rounded-full border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-md transition hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+                      >
+                        Following
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleFollow(user.id)}
+                        className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:from-violet-700 hover:to-indigo-700"
+                      >
+                        Follow
                       </button>
                     )}
                   </div>
@@ -437,6 +475,18 @@ export default function ProfilePage() {
                 </div>
               </section>
 
+              {/* Profile Stats Bar */}
+              <div className="mt-4 flex gap-6 px-1">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-gray-900">{posts.filter((p) => !p.archived).length}</p>
+                  <p className="text-xs font-medium text-gray-500 mt-0.5">Posts</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-gray-900">{posts.filter((p) => p.imageUrl && !p.archived).length}</p>
+                  <p className="text-xs font-medium text-gray-500 mt-0.5">Photos</p>
+                </div>
+              </div>
+
               {/* Navigation Feed Tabs Panel */}
               <nav className="mt-6 flex gap-2 rounded-3xl border border-white/80 bg-white/60 p-2 backdrop-blur-xl shadow-sm">
                 {(["posts", "media"] as ProfileTab[]).map((tab) => (
@@ -444,11 +494,10 @@ export default function ProfilePage() {
                     key={tab}
                     type="button"
                     onClick={() => setActiveTab(tab)}
-                    className={`relative flex-1 rounded-2xl px-4 py-2.5 text-sm font-semibold capitalize transition-all ${
-                      activeTab === tab
-                        ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/10"
-                        : "text-gray-500 hover:bg-violet-50/60 hover:text-gray-800"
-                    }`}
+                    className={`relative flex-1 rounded-2xl px-4 py-2.5 text-sm font-semibold capitalize transition-all ${activeTab === tab
+                      ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/10"
+                      : "text-gray-500 hover:bg-violet-50/60 hover:text-gray-800"
+                      }`}
                   >
                     {tab}
                   </button>
