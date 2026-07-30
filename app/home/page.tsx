@@ -2,10 +2,8 @@
 
 import {
   getFeed,
-  FeedPost,
-  getcurrentUser,
+  getCurrentUser,
   getAllUsers,
-  UserCardResponse,
   likePost,
   unlikePost,
   sharePost,
@@ -32,35 +30,41 @@ import Sidebar from "@/components/Sidebar";
 import RightSidebar from "@/components/RightSidebar";
 import PostComposer from "@/components/PostComposer";
 import PostCard from "@/components/PostCard";
-import ExploreTab from "@/components/ExploreTab";
-import NotificationsTab from "@/components/NotificationsTab";
-import MessagesTab from "@/components/MessagesTab";
-import { Post, Comment } from "@/lib/types";
+import FeedList from "@/components/feedlist";
+import Header from "@/components/Header";
+import { Post, Comment, UserCardResponse } from "@/lib/types";
 import { Archive, CheckCircle } from "lucide-react";
+import { showConfirm } from "@/lib/confirm";
 
 function FeedSkeleton() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="bg-white rounded-2xl p-5 border border-[#EAEAEF]"
+          className="bg-white rounded-2xl px-6 py-5 border border-[#E8E9F0]"
           style={{ boxShadow: "var(--shadow-card)" }}
         >
-          <div className="flex gap-3">
-            <div className="skeleton w-10 h-10 rounded-full" />
+          <div className="flex gap-4">
+            <div className="skeleton w-11 h-11 rounded-full" />
             <div className="flex-1 space-y-2.5 pt-1">
               <div className="skeleton h-3.5 w-36 rounded" />
               <div className="skeleton h-3 w-24 rounded" />
-              <div className="skeleton h-3.5 w-full rounded mt-3" />
-              <div className="skeleton h-3.5 w-4/5 rounded" />
-              <div className="skeleton h-3.5 w-3/5 rounded" />
+              <div className="skeleton h-4 w-full rounded mt-3" />
+              <div className="skeleton h-4 w-4/5 rounded" />
+              <div className="skeleton h-4 w-3/5 rounded" />
             </div>
           </div>
-          <div className="flex gap-4 mt-5 pt-4 border-t border-[#F0F0F5]">
-            <div className="skeleton h-7 w-16 rounded-lg" />
-            <div className="skeleton h-7 w-16 rounded-lg" />
-            <div className="skeleton h-7 w-16 rounded-lg" />
+          <div className="flex gap-0 mt-5 pt-4 border-t border-[#EFF0F5]">
+            <div className="flex-1 flex justify-center">
+              <div className="skeleton h-7 w-16 rounded-lg" />
+            </div>
+            <div className="flex-1 flex justify-center">
+              <div className="skeleton h-7 w-16 rounded-lg" />
+            </div>
+            <div className="flex-1 flex justify-center">
+              <div className="skeleton h-7 w-16 rounded-lg" />
+            </div>
           </div>
         </div>
       ))}
@@ -72,6 +76,11 @@ export default function HomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const LIMIT = 10;
   const [currentUser, setCurrentUser] = useState<{
     id: number;
     username: string;
@@ -96,17 +105,22 @@ export default function HomePage() {
 
   const refreshFeed = async () => {
     if (!currentUser) return;
-    const feedPage = await getFeed();
+
+    const feedPage = await getFeed(LIMIT, 0);
     const feed = feedPage.items;
+
     setPosts(
       feed.map((post) => feedPostToPost(post, usersMap, currentUser.id)),
     );
+
+    setOffset(LIMIT);
+    setHasMore(feedPage.has_more);
   };
 
   useEffect(() => {
     const initPage = async () => {
       try {
-        const me = await getcurrentUser().catch(() => null);
+        const me = await getCurrentUser().catch(() => null);
         if (!me) {
           router.replace("/auth/login");
           return;
@@ -262,6 +276,14 @@ export default function HomePage() {
   };
 
   const handleDeletePost = async (id: number) => {
+    const result = await showConfirm(
+      "Delete Post?",
+      "This action cannot be undone.",
+      "Delete",
+    );
+
+    if (!result.isConfirmed) return;
+
     try {
       await deletePost(id);
       setPosts((prev) => prev.filter((p) => p.id !== id));
@@ -328,19 +350,60 @@ export default function HomePage() {
       showToast("Failed to unshare post", "error");
     }
   };
+  const loadMorePosts = async () => {
+    if (loadingMore || !hasMore || !currentUser) {
+      return;
+    }
+
+    try {
+      setLoadingMore(true);
+
+      const feedPage = await getFeed(LIMIT, offset);
+
+      const mapped = feedPage.items.map((post) =>
+        feedPostToPost(post, usersMap, currentUser.id),
+      );
+
+      setPosts((prev) => {
+        const existingIds = new Set(
+          prev.map((post) => `${post.type}-${post.id}`),
+        );
+
+        const uniqueNewPosts = mapped.filter(
+          (post) => !existingIds.has(`${post.type}-${post.id}`),
+        );
+
+        return [...prev, ...uniqueNewPosts];
+      });
+
+      setOffset((prev) => prev + LIMIT);
+
+      setHasMore(feedPage.has_more);
+    } catch (error) {
+      console.error("Failed loading more posts:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F7F7F9]">
-        <div className="flex max-w-[1200px] mx-auto gap-0">
-          {/* Sidebar placeholder */}
-          <div className="hidden md:block w-[240px] shrink-0 border-r border-[#EAEAEF] h-screen" />
-          {/* Feed skeleton */}
-          <main className="flex-1 px-6 py-5 max-w-[600px]">
-            <FeedSkeleton />
-          </main>
-          {/* Right sidebar placeholder */}
-          <div className="hidden lg:block w-[280px] shrink-0" />
+      <div
+        className="min-h-screen flex flex-col"
+        style={{ background: "var(--bg)" }}
+      >
+        <Header />
+        <div className="w-full max-w-[1440px] mx-auto px-6 mt-6 md:mt-8 flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[260px_1fr_280px] gap-6 md:gap-8">
+            {/* Sidebar placeholder */}
+            <div className="hidden md:block w-full h-64 bg-white rounded-2xl border border-[#E8E9F0] animate-pulse" />
+            {/* Feed skeleton */}
+            <main className="flex-1 min-w-0 max-w-[640px]">
+              <FeedSkeleton />
+            </main>
+            {/* Right sidebar placeholder */}
+            <div className="hidden lg:block w-full" />
+          </div>
         </div>
       </div>
     );
@@ -351,9 +414,9 @@ export default function HomePage() {
       {/* Toast notification */}
       {toast && (
         <div
-          className="animate-toast-in fixed bottom-6 left-1/2 z-[200] flex items-center gap-2.5 -translate-x-1/2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
+          className="animate-toast-in fixed bottom-6 left-1/2 z-[200] flex items-center gap-2.5 -translate-x-1/2 px-5 py-3 rounded-2xl text-sm font-semibold text-white"
           style={{
-            background: toastType === "error" ? "#DC2626" : "#111118",
+            background: toastType === "error" ? "#DC2626" : "#0F0F1A",
             boxShadow: "var(--shadow-toast)",
           }}
         >
@@ -364,86 +427,108 @@ export default function HomePage() {
         </div>
       )}
 
-      <div className="min-h-screen bg-[#F7F7F9]">
-        <div className="flex max-w-[1200px] mx-auto">
-          {/* LEFT SIDEBAR */}
-          <Sidebar />
+      <div
+        className="min-h-screen flex flex-col"
+        style={{ background: "var(--bg)" }}
+      >
+        <Header />
 
-          {/* MAIN FEED */}
-          <main className="flex-1 min-w-0 px-5 py-5 space-y-3 max-w-[600px]">
-            {activeNav === "Home" && (
-              <PostComposer
-                allowImageUpload={true}
-                avatarFallback={currentUser?.username?.charAt(0) ?? "U"}
-                onPostSubmit={handlePostSubmit}
-              />
-            )}
+        <div className="w-full max-w-[1440px] mx-auto px-6 mt-6 md:mt-8 flex-1 pb-12">
+          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[260px_1fr_280px] gap-6 md:gap-8 items-start">
+            {/* LEFT SIDEBAR */}
+            <Sidebar />
 
-            {activeNav === "Archived" && visiblePosts.length === 0 && (
-              <div
-                className="bg-white rounded-2xl p-10 text-center border border-[#EAEAEF]"
-                style={{ boxShadow: "var(--shadow-card)" }}
-              >
-                <div className="w-12 h-12 rounded-full bg-[#F3EEFF] flex items-center justify-center mx-auto mb-3">
-                  <Archive className="w-5 h-5 text-[#7C3AED]" />
+            {/* MAIN FEED */}
+            <main
+              className="flex-1 min-w-0 space-y-5"
+              style={{ maxWidth: "640px" }}
+            >
+              {/* Post Composer — only on Home tab */}
+              {activeNav === "Home" && (
+                <PostComposer
+                  allowImageUpload={true}
+                  avatarFallback={currentUser?.username?.charAt(0) ?? "U"}
+                  onPostSubmit={handlePostSubmit}
+                />
+              )}
+
+              {/* Archived empty state */}
+              {activeNav === "Archived" && visiblePosts.length === 0 && (
+                <div
+                  className="bg-white rounded-2xl px-6 py-12 text-center border border-[#E8E9F0]"
+                  style={{ boxShadow: "var(--shadow-card)" }}
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-[#EEEFFE] flex items-center justify-center mx-auto mb-4">
+                    <Archive className="w-5 h-5" style={{ color: "#5B5CEB" }} />
+                  </div>
+                  <p className="text-[15px] font-semibold text-[#0F0F1A] mb-1">
+                    No archived posts
+                  </p>
+                  <p className="text-[14px] text-[#9B9BB0]">
+                    Archive a post from its menu and it&apos;ll show up here.
+                  </p>
                 </div>
-                <p className="text-sm font-semibold text-[#111118] mb-1">
-                  No archived posts
-                </p>
-                <p className="text-sm text-[#6B6B80]">
-                  Archive a post from its menu and it&apos;ll show up here.
-                </p>
-              </div>
-            )}
+              )}
 
-            {activeNav === "Explore" && currentUser && (
-              <ExploreTab currentUserId={currentUser.id} />
-            )}
+              {/* Post feed */}
+              {(activeNav === "Home" || activeNav === "Archived") && (
+                <FeedList
+                  posts={visiblePosts}
+                  onLoadMore={loadMorePosts}
+                  hasMore={hasMore}
+                  loadingMore={loadingMore}
+                  currentUserId={currentUser?.id}
+                  currentUserInitial={currentUser?.username?.charAt(0) ?? "U"}
+                  onLike={toggleLike}
+                  onShare={handleSharePost}
+                  onUnshare={handleUnsharePost}
+                  onArchive={toggleArchive}
+                  onDelete={handleDeletePost}
+                  onEdit={saveEdit}
+                  onAddComment={addComment}
+                  onLoadComments={loadComments}
+                  onEditComment={handleEditComment}
+                  onDeleteComment={handleDeleteComment}
+                />
+              )}
 
-            {activeNav === "Notifications" && currentUser && (
-              <NotificationsTab
-                currentUserId={currentUser.id}
-                currentUsername={currentUser.username}
-              />
-            )}
+              {/* Empty home feed state */}
+              {activeNav === "Home" &&
+                visiblePosts.length === 0 &&
+                !loading && (
+                  <div
+                    className="bg-white rounded-2xl px-6 py-12 text-center border border-[#E8E9F0]"
+                    style={{ boxShadow: "var(--shadow-card)" }}
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-[#EEEFFE] flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle
+                        className="w-5 h-5"
+                        style={{ color: "#5B5CEB" }}
+                      />
+                    </div>
+                    <p className="text-[15px] font-semibold text-[#0F0F1A] mb-1">
+                      Your feed is empty
+                    </p>
+                    <p className="text-[14px] text-[#9B9BB0]">
+                      Follow people or create your first post to get started.
+                    </p>
+                  </div>
+                )}
+            </main>
 
-            {activeNav === "Messages" && currentUser && (
-              <MessagesTab currentUserId={currentUser.id} />
-            )}
-
-            {(activeNav === "Home" || activeNav === "Archived") &&
-              visiblePosts.map((post) => (
-                <div key={`${post.type}-${post.id}`} className="animate-card-in">
-                  <PostCard
-                    post={post}
-                    currentUserId={currentUser?.id}
-                    currentUserInitial={currentUser?.username?.charAt(0) ?? "U"}
-                    onLike={toggleLike}
-                    onShare={handleSharePost}
-                    onUnshare={handleUnsharePost}
-                    onArchive={toggleArchive}
-                    onDelete={handleDeletePost}
-                    onEdit={saveEdit}
-                    onAddComment={addComment}
-                    onLoadComments={loadComments}
-                    onEditComment={handleEditComment}
-                    onDeleteComment={handleDeleteComment}
-                  />
-                </div>
-              ))}
-          </main>
-
-          {/* RIGHT SIDEBAR */}
-          <RightSidebar
-            suggestedUsers={suggestedUsers.map((u) => ({
-              id: u.id,
-              name: u.username,
-              username: u.username,
-              avatar_url: u.avatar_url ?? "",
-            }))}
-            trendingTopics={trendingTopics}
-            showSuggested={suggestedUsers.length > 0}
-          />
+            {/* RIGHT SIDEBAR */}
+            <RightSidebar
+              suggestedUsers={suggestedUsers.map((u) => ({
+                id: u.id,
+                name: u.username,
+                username: u.username,
+                avatar_url: u.avatar_url ?? "",
+              }))}
+              trendingTopics={trendingTopics}
+              showSuggested={suggestedUsers.length > 0}
+              showTrending={trendingTopics.length > 0}
+            />
+          </div>
         </div>
       </div>
     </>

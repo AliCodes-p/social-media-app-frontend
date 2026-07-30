@@ -6,11 +6,11 @@ type SessionResult = {
   valid: boolean;
   setCookieHeaders: string[];
 };
-
+/*Sends a request from Next.js to backend while forwarding user cookies*/
 async function fetchWithCookies(
   request: NextRequest,
   path: string,
-  method: "GET" | "POST" = "GET"
+  method: "GET" | "POST" = "GET",
 ): Promise<Response> {
   return fetch(getBackendUrl(path, request), {
     method,
@@ -21,12 +21,15 @@ async function fetchWithCookies(
   });
 }
 
+/* store the new cookies*/
 function collectSetCookieHeaders(response: Response): string[] {
   return response.headers.getSetCookie?.() ?? [];
 }
 
+/*check user session is valid with access and refresh token*/
+
 export async function validateSession(
-  request: NextRequest
+  request: NextRequest,
 ): Promise<SessionResult> {
   const meResponse = await fetchWithCookies(request, "/auth/me");
 
@@ -39,7 +42,11 @@ export async function validateSession(
     return { valid: false, setCookieHeaders: [] };
   }
 
-  const refreshResponse = await fetchWithCookies(request, "/auth/refresh", "POST");
+  const refreshResponse = await fetchWithCookies(
+    request,
+    "/auth/refresh",
+    "POST",
+  );
 
   if (!refreshResponse.ok) {
     return { valid: false, setCookieHeaders: [] };

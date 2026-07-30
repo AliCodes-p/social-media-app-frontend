@@ -15,18 +15,18 @@ interface PostComposerProps {
 export default function PostComposer({
   avatarUrl,
   avatarFallback = "Y",
-  placeholder = "Share something with your sphere...",
+  placeholder = "What's on your mind?",
   allowImageUpload = false,
   onPostSubmit,
 }: PostComposerProps) {
-  const [content, setContent]           = useState("");
+  const [content, setContent]             = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl]     = useState<string | null>(null);
-  const [isFocused, setIsFocused]       = useState(false);
-  const [isPosting, setIsPosting]       = useState(false);
+  const [previewUrl, setPreviewUrl]       = useState<string | null>(null);
+  const [isFocused, setIsFocused]         = useState(false);
+  const [isPosting, setIsPosting]         = useState(false);
 
-  const fileInputRef  = useRef<HTMLInputElement>(null);
-  const textareaRef   = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef  = useRef<HTMLTextAreaElement>(null);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,15 +67,18 @@ export default function PostComposer({
 
   return (
     <div
-      className="bg-white rounded-2xl border border-[#EAEAEF] overflow-hidden transition-all duration-200"
-      style={{ boxShadow: "var(--shadow-card)" }}
+      className="bg-white rounded-2xl border border-[#E8E9F0] overflow-hidden transition-all duration-200"
+      style={{
+        boxShadow: isFocused
+          ? "0 0 0 2px rgba(91,92,235,0.15), var(--shadow-card)"
+          : "var(--shadow-card)",
+      }}
     >
-      {/* ── Main compose area ── */}
-      <div className="flex gap-3 p-4 pb-3">
+      <div className="flex gap-4 px-5 pt-5 pb-3">
         {/* Avatar */}
         <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #7C3AED, #6366F1)" }}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 overflow-hidden ring-2 ring-[#EEEFFE]"
+          style={{ background: "linear-gradient(135deg, #5B5CEB, #7879F1)" }}
         >
           {avatarUrl ? (
             <Image src={avatarUrl} alt="Avatar" fill className="object-cover" />
@@ -84,20 +87,22 @@ export default function PostComposer({
           )}
         </div>
 
-        {/* Text area */}
-        <div className="flex-1 min-w-0 pt-1.5">
+        {/* Textarea */}
+        <div className="flex-1 min-w-0">
           <textarea
             ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            rows={isFocused || hasContent ? 3 : 1}
             className="
-              w-full resize-none bg-transparent text-[15px] text-[#111118]
-              outline-none placeholder-[#9999AB] leading-[1.6]
-              transition-all duration-200
+              w-full resize-none rounded-[18px] border border-[#E5E7EB] bg-[#F9FAFB]
+              text-[15px] text-[#0F0F1A] placeholder-[#6B7280] placeholder:text-[16px]
+              p-4 min-h-[120px] outline-none leading-[1.65]
+              transition-all duration-200 ease-in-out
+              focus:border-[#5B5CEB] focus:ring-2 focus:ring-[#5B5CEB]/15
             "
           />
         </div>
@@ -105,7 +110,7 @@ export default function PostComposer({
 
       {/* ── Image preview ── */}
       {allowImageUpload && previewUrl && (
-        <div className="relative mx-4 mb-3 overflow-hidden rounded-xl border border-[#EAEAEF]">
+        <div className="relative mx-5 mb-3 overflow-hidden rounded-xl border border-[#E8E9F0] bg-[#F7F8FC]">
           <img
             src={previewUrl}
             alt="Preview"
@@ -116,8 +121,8 @@ export default function PostComposer({
             onClick={removeSelectedImage}
             className="
               absolute right-2 top-2 flex h-7 w-7 items-center justify-center
-              rounded-full bg-[#111118]/75 text-white backdrop-blur-sm
-              transition hover:bg-[#111118] active:scale-95
+              rounded-full bg-[#0F0F1A]/70 text-white backdrop-blur-sm
+              transition hover:bg-[#0F0F1A] active:scale-95
             "
             aria-label="Remove image"
           >
@@ -127,11 +132,11 @@ export default function PostComposer({
       )}
 
       {/* ── Divider ── */}
-      <div className="border-t border-[#F0F0F5] mx-4" />
+      <div className="border-t border-[#EFF0F5] mx-0" />
 
-      {/* ── Action row ── */}
-      <div className="flex items-center justify-between px-4 py-2.5">
-        {/* Left: media action buttons */}
+      {/* ── Action bar ── */}
+      <div className="flex items-center justify-between px-5 py-3">
+        {/* Left: attachment buttons */}
         <div className="flex items-center gap-1">
           {allowImageUpload && (
             <>
@@ -146,9 +151,9 @@ export default function PostComposer({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="
-                  flex items-center gap-1.5 rounded-lg px-2.5 py-1.5
-                  text-[13px] font-medium text-[#6B6B80]
-                  transition hover:bg-[#F3EEFF] hover:text-[#7C3AED]
+                  flex items-center gap-1.5 rounded-lg px-3 py-2
+                  text-[13px] font-medium text-[#5C5C72]
+                  transition hover:bg-[#EEEFFE] hover:text-[#5B5CEB]
                   active:scale-95
                 "
                 title="Add photo"
@@ -162,9 +167,9 @@ export default function PostComposer({
           <button
             type="button"
             className="
-              flex items-center gap-1.5 rounded-lg px-2.5 py-1.5
-              text-[13px] font-medium text-[#6B6B80]
-              transition hover:bg-[#F3EEFF] hover:text-[#7C3AED]
+              flex items-center gap-1.5 rounded-lg px-3 py-2
+              text-[13px] font-medium text-[#5C5C72]
+              transition hover:bg-[#EEEFFE] hover:text-[#5B5CEB]
               active:scale-95
             "
             title="Add emoji (coming soon)"
@@ -174,15 +179,15 @@ export default function PostComposer({
           </button>
         </div>
 
-        {/* Right: post button */}
+        {/* Right: Post button */}
         <button
           type="button"
           onClick={handleSubmit}
           disabled={!hasContent || isPosting}
-          className="btn-accent text-[13px] px-4 py-1.5 rounded-full disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+          className="btn-accent text-[13px] px-5 py-2 rounded-full disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
           {isPosting ? (
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-full border border-white/40 border-t-white animate-spin-custom" />
               Posting…
             </span>

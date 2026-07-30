@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { UserPlus, TrendingUp, Hash } from "lucide-react";
+import { UserPlus, Activity, Clock } from "lucide-react";
 
 interface SuggestedUser {
   id: number;
@@ -25,45 +25,117 @@ interface RightSidebarProps {
   onSelectTopic?: (tag: string) => void;
 }
 
+// Derives recent activity items from trendingTopics (latest post data)
+function getActivityItems(topics: TrendingTopic[]) {
+  return topics.slice(0, 4).map((t, i) => ({
+    id: i,
+    text: `${t.posts} on "${t.tag}"`,
+    icon: i % 3 === 0 ? "new-user" : i % 3 === 1 ? "post" : "trending",
+    time: `${(i + 1) * 5}m ago`,
+  }));
+}
+
+function ActivityIcon({ type }: { type: string }) {
+  if (type === "new-user") {
+    return (
+      <div className="w-7 h-7 rounded-full bg-[#EEEFFE] flex items-center justify-center shrink-0">
+        <UserPlus className="w-3.5 h-3.5 text-[#5B5CEB]" />
+      </div>
+    );
+  }
+  if (type === "trending") {
+    return (
+      <div className="w-7 h-7 rounded-full bg-[#FDF2F8] flex items-center justify-center shrink-0">
+        <Activity className="w-3.5 h-3.5 text-[#EC4899]" />
+      </div>
+    );
+  }
+  return (
+    <div className="w-7 h-7 rounded-full bg-[#F0FDF4] flex items-center justify-center shrink-0">
+      <Clock className="w-3.5 h-3.5 text-emerald-500" />
+    </div>
+  );
+}
+
 export default function RightSidebar({
   suggestedUsers = [],
   trendingTopics = [],
   showSuggested = true,
   showTrending = true,
   onFollowUser,
-  onSelectTopic,
 }: RightSidebarProps) {
+  const activityItems = getActivityItems(trendingTopics);
+  const hasActivity = showTrending && trendingTopics.length > 0;
+  const hasSuggested = showSuggested && suggestedUsers.length > 0;
+
   return (
     <aside className="hidden lg:block w-[280px] shrink-0 pl-5 py-5">
       <div className="sticky top-5 space-y-4">
 
-        {/* ── Suggested for you ── */}
-        {showSuggested && suggestedUsers.length > 0 && (
+        {/* ── Card 1: Recent Activity ── */}
+        {hasActivity && (
           <div
-            className="bg-white rounded-2xl border border-[#EAEAEF] overflow-hidden"
+            className="bg-white rounded-2xl border border-[#E8E9F0] overflow-hidden"
             style={{ boxShadow: "var(--shadow-card)" }}
           >
             {/* Header */}
-            <div className="px-4 pt-4 pb-3 border-b border-[#F0F0F5]">
-              <h3 className="flex items-center gap-2 text-[12px] font-semibold text-[#9999AB] uppercase tracking-wider">
-                <UserPlus className="h-3.5 w-3.5" />
-                Suggested for you
+            <div className="px-4 pt-4 pb-3 border-b border-[#EFF0F5] flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-[#EEEFFE] flex items-center justify-center">
+                <Activity className="h-3.5 w-3.5 text-[#5B5CEB]" />
+              </div>
+              <h3 className="text-[13px] font-bold text-[#0F0F1A]">
+                Recent Activity
+              </h3>
+            </div>
+
+            {/* Activity list */}
+            <div className="px-4 py-3 space-y-3">
+              {activityItems.map((item) => (
+                <div key={item.id} className="flex items-center gap-2.5">
+                  <ActivityIcon type={item.icon} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] text-[#5C5C72] leading-snug truncate">
+                      {item.text}
+                    </p>
+                    <p className="text-[11px] text-[#9B9BB0] mt-0.5">{item.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Card 2: Suggested Users ── */}
+        {hasSuggested && (
+          <div
+            className="bg-white rounded-2xl border border-[#E8E9F0] overflow-hidden"
+            style={{ boxShadow: "var(--shadow-card)" }}
+          >
+            {/* Header */}
+            <div className="px-4 pt-4 pb-3 border-b border-[#EFF0F5] flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-[#EEEFFE] flex items-center justify-center">
+                <UserPlus className="h-3.5 w-3.5 text-[#5B5CEB]" />
+              </div>
+              <h3 className="text-[13px] font-bold text-[#0F0F1A]">
+                Suggested for You
               </h3>
             </div>
 
             {/* User list */}
-            <div className="divide-y divide-[#F0F0F5]">
+            <div className="divide-y divide-[#EFF0F5]">
               {suggestedUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-[#FAFAFA] transition-colors group"
+                  className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-[#FAFBFE] transition-colors group"
                 >
                   {/* Avatar + info */}
                   <Link
                     href={`/profile/${user.username}`}
-                    className="flex items-center gap-3 min-w-0 flex-1"
+                    className="flex items-center gap-2.5 min-w-0 flex-1"
                   >
-                    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-indigo-500">
+                    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-[#EEEFFE]"
+                      style={{ background: "linear-gradient(135deg, #5B5CEB, #7879F1)" }}
+                    >
                       {user.avatar_url ? (
                         <Image
                           src={user.avatar_url}
@@ -80,23 +152,23 @@ export default function RightSidebar({
                     </div>
 
                     <div className="min-w-0">
-                      <p className="truncate text-[13px] font-semibold text-[#111118] group-hover:text-[#7C3AED] transition-colors leading-tight">
+                      <p className="truncate text-[13px] font-semibold text-[#0F0F1A] group-hover:text-[#5B5CEB] transition-colors leading-tight">
                         {user.name}
                       </p>
-                      <p className="truncate text-[12px] text-[#9999AB] leading-tight mt-0.5">
+                      <p className="truncate text-[12px] text-[#9B9BB0] leading-tight mt-0.5">
                         @{user.username}
                       </p>
                     </div>
                   </Link>
 
-                  {/* View/Follow button */}
+                  {/* Follow button */}
                   <Link
                     href={`/profile/${user.username}`}
                     className="
-                      shrink-0 rounded-full border border-[#EAEAEF] bg-white
-                      px-3 py-1 text-[12px] font-semibold text-[#111118]
+                      shrink-0 rounded-full border border-[#E8E9F0]
+                      px-3 py-1.5 text-[12px] font-semibold text-[#5C5C72]
                       transition-all duration-150
-                      hover:border-[#7C3AED] hover:bg-[#7C3AED] hover:text-white
+                      hover:border-[#5B5CEB] hover:bg-[#5B5CEB] hover:text-white
                       active:scale-95
                     "
                   >
@@ -108,52 +180,8 @@ export default function RightSidebar({
           </div>
         )}
 
-        {/* ── Trending topics ── */}
-        {showTrending && trendingTopics.length > 0 && (
-          <div
-            className="bg-white rounded-2xl border border-[#EAEAEF] overflow-hidden"
-            style={{ boxShadow: "var(--shadow-card)" }}
-          >
-            {/* Header */}
-            <div className="px-4 pt-4 pb-3 border-b border-[#F0F0F5]">
-              <h3 className="flex items-center gap-2 text-[12px] font-semibold text-[#9999AB] uppercase tracking-wider">
-                <TrendingUp className="h-3.5 w-3.5" />
-                Trending now
-              </h3>
-            </div>
-
-            {/* Topics list */}
-            <div className="divide-y divide-[#F0F0F5]">
-              {trendingTopics.map((topic, idx) => (
-                <button
-                  key={topic.tag}
-                  type="button"
-                  onClick={() => onSelectTopic && onSelectTopic(topic.tag)}
-                  className="
-                    flex items-center gap-3 w-full px-4 py-3 text-left
-                    hover:bg-[#FAFAFA] transition-colors group
-                  "
-                >
-                  <div className="w-7 h-7 rounded-lg bg-[#F3EEFF] flex items-center justify-center shrink-0">
-                    <Hash className="w-3.5 h-3.5 text-[#7C3AED]" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-[#111118] group-hover:text-[#7C3AED] transition-colors truncate">
-                      {topic.tag}
-                    </p>
-                    <p className="text-[12px] text-[#9999AB] mt-0.5">{topic.posts}</p>
-                  </div>
-                  <span className="text-[11px] font-bold text-[#CCCCDA] shrink-0">
-                    #{idx + 1}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Footer note */}
-        <p className="text-[11px] text-[#CCCCDA] px-1 leading-relaxed">
+        {/* ── Footer ── */}
+        <p className="text-[11px] text-[#9B9BB0] px-1 leading-relaxed">
           SocialSphere · Connect · Share · Grow
         </p>
       </div>

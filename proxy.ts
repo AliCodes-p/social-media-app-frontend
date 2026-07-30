@@ -10,7 +10,6 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/find_friends") ||
     pathname.startsWith("/profile") ||
     pathname.startsWith("/me") ||
-    pathname.startsWith("/post") ||
     pathname.startsWith("/posts") ||
     pathname.startsWith("/create");
   const isAuthPage =
@@ -59,7 +58,6 @@ export const config = {
     "/find_friends/:path*",
     "/profile/:path*",
     "/me/:path*",
-    "/post/:path*",
     "/posts/:path*",
     "/create/:path*",
     "/login",

@@ -54,5 +54,110 @@ export interface Follow {
   updated_at: string;
 }
 
+// =========================
+// CHAT
+// =========================
 
+export interface Conversation {
+  id: number;
+  created_at: string;
+  updated_at: string;
 
+  other_user: {
+    id: number;
+    username: string;
+    avatar_url: string | null;
+  };
+
+  last_message: {
+    content: string;
+    created_at: string;
+  } | null;
+}
+
+export interface Message {
+  id: number;
+  conversation_id: number;
+  sender_id: number;
+  content: string;
+  status: "sent" | "delivered" | "read";
+  created_at: string;
+}
+
+export interface FeedPost {
+  post_id: number;
+  user_id: number;
+  content: string;
+  image_url: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  likes_count: number;
+  comments_count: number;
+  liked_by_me: boolean;
+
+  //  ADD THESE (from backend)
+  is_shared: boolean;
+  shared_by_user_id: number | null;
+  shared_at: string | null;
+  type: "post" | "share";
+}
+
+export interface FeedPage {
+  items: FeedPost[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+export interface UserProfileResponse {
+  id: number;
+  username: string;
+  bio: string | null;
+  avatar_url: string | null;
+  cover_url: string | null;
+}
+
+export interface UserCardResponse {
+  id: number;
+  username: string;
+  bio: string | null;
+  avatar_url: string | null;
+  cover_url: string | null;
+}
+export interface FriendRequestResponse {
+  id: number;
+  sender_id: number;
+  receiver_id: number;
+  status: string;
+  updated_at: string;
+}
+
+export interface IncomingFriendRequestResponse extends FriendRequestResponse {
+  sender_username: string;
+  sender_avatar: string | null;
+}
+
+export interface CommentResponse {
+  id: number;
+  user_id: number;
+  post_id: number;
+  content: string;
+  created_at: string;
+}
+export interface LikeResponse {
+  id: number;
+  user_id: number;
+  post_id: number;
+  created_at: string;
+}
+export interface ShareResponse {
+  id: number;
+  user_id: number;
+  post_id: number;
+  created_at: string;
+}
+export interface FriendStatusResponse {
+  status: string;
+  request_id?: number | null;
+}

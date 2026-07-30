@@ -6,6 +6,7 @@ import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import RightSidebar from "@/components/RightSidebar";
 import PostComposer from "@/components/PostComposer";
+import Header from "@/components/Header";
 
 export default function CreatePostPage() {
   const router = useRouter();
@@ -34,33 +35,34 @@ export default function CreatePostPage() {
 
   return (
     <div
-      className="min-h-screen relative overflow-hidden text-gray-100"
-      style={{
-        background:
-          "linear-gradient(135deg, #FAFAFF 0%, #F3F0FF 50%, #EEF2FF 100%)",
-      }}
+      className="min-h-screen flex flex-col"
+      style={{ background: "var(--bg)" }}
     >
+      <Header />
+
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-xl">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold text-white bg-[#0F0F1A] shadow-xl">
           {toast}
         </div>
       )}
 
-      <div className="relative z-10 flex max-w-7xl mx-auto gap-5 px-5 py-5">
-        <Sidebar />
+      <div className="w-full max-w-[1440px] mx-auto px-6 mt-6 md:mt-8 flex-1 pb-12">
+        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[260px_1fr_280px] gap-6 md:gap-8 items-start">
+          <Sidebar />
 
-        <main className="flex-1 max-w-xl mx-auto w-full space-y-4">
-          <div className="mb-4">
-            <h1 className="text-xl font-bold text-gray-900">Create a new post</h1>
-            <p className="text-sm text-gray-500">Share your thoughts with the sphere</p>
-          </div>
-          <PostComposer
-            allowImageUpload
-            onPostSubmit={handlePostSubmit}
-          />
-        </main>
+          <main className="flex-1 max-w-xl mx-auto w-full space-y-4">
+            <div className="mb-2">
+              <h1 className="text-xl font-bold text-[#0F0F1A]">Create a new post</h1>
+              <p className="text-sm text-[#9B9BB0]">Share your thoughts with the sphere</p>
+            </div>
+            <PostComposer
+              allowImageUpload
+              onPostSubmit={handlePostSubmit}
+            />
+          </main>
 
-        <RightSidebar />
+          <RightSidebar />
+        </div>
       </div>
     </div>
   );

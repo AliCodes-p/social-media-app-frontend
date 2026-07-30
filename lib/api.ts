@@ -1,7 +1,21 @@
+import {
+  FeedPost,
+  FeedPage,
+  UserProfileResponse,
+  UserCardResponse,
+  FriendRequestResponse,
+  IncomingFriendRequestResponse,
+  CommentResponse,
+  LikeResponse,
+  ShareResponse,
+  FriendStatusResponse,
+  Conversation,
+  Message,
+} from "@/lib/types";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/backend";
 console.log("NEXT_PUBLIC_API_URL =", process.env.NEXT_PUBLIC_API_URL);
 console.log("API_BASE =", API_BASE);
-
+/*define error format*/
 type ApiErrorBody = {
   detail?: string | { msg: string }[];
 };
@@ -19,7 +33,7 @@ function getErrorMessage(data: ApiErrorBody, fallback: string): string {
 /** Internal flag to avoid infinite refresh loops */
 let _isRefreshing = false;
 
-async function apiRequest<T>(
+export async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
   _retry = true,
@@ -95,12 +109,14 @@ export function resendOtp(email: string, purpose: "register" | "login") {
   });
 }
 
-export function getcurrentUser() {
+export function getCurrentUser() {
   return apiRequest<{
     id: number;
     username: string;
     email: string;
     is_verified: boolean;
+    role: string;
+    avatar_url: string | null;
   }>("/auth/me");
 }
 
@@ -139,43 +155,16 @@ export function resetPassword(reset_token: string, new_password: string) {
     body: JSON.stringify({ reset_token, new_password }),
   });
 }
+export function getAllUsers() {
+  return apiRequest<UserCardResponse[]>("/users/");
+}
 
 // =========================
 // FEED
 // =========================
 
-export interface FeedPost {
-  post_id: number;
-  user_id: number;
-  content: string;
-  image_url: string | null;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  likes_count: number;
-  comments_count: number;
-  liked_by_me: boolean;
-
-  //  ADD THESE (from backend)
-  is_shared: boolean;
-  shared_by_user_id: number | null;
-  shared_at: string | null;
-  type: "post" | "share";
-}
-
-export interface FeedPage {
-  items: FeedPost[];
-  total: number;
-  limit: number;
-  offset: number;
-  has_more: boolean;
-}
-
-export function getFeed() {
-  return apiRequest<FeedPage>("/feed/");
-}
-export function getAllPosts() {
-  return apiRequest<FeedPost[]>("/posts/");
+export function getFeed(limit = 10, offset = 0) {
+  return apiRequest<FeedPage>(`/feed/?limit=${limit}&offset=${offset}`);
 }
 
 // =========================
@@ -215,9 +204,6 @@ export async function createPostWithImage(content: string, image: File) {
 
   return JSON.parse(text);
 }
-export function getPost(postId: number) {
-  return apiRequest<FeedPost>(`/posts/${postId}`);
-}
 
 export function updatePost(
   postId: number,
@@ -252,32 +238,6 @@ export function unarchivePost(postId: number) {
 // =========================
 // USERS & PROFILES
 // =========================
-
-export interface UserProfileResponse {
-  id: number;
-  username: string;
-  bio: string | null;
-  avatar_url: string | null;
-  cover_url: string | null;
-}
-
-export interface UserCardResponse {
-  id: number;
-  username: string;
-  bio: string | null;
-  avatar_url: string | null;
-  cover_url: string | null;
-}
-
-export function getAllUsers() {
-  return apiRequest<UserCardResponse[]>("/users/");
-}
-
-export function searchUsers(query: string) {
-  return apiRequest<UserCardResponse[]>(
-    `/users/search?query=${encodeURIComponent(query)}`,
-  );
-}
 
 export function getMyProfile() {
   return apiRequest<UserProfileResponse & { posts?: FeedPost[] }>("/users/me");
@@ -338,14 +298,6 @@ export async function uploadCover(file: File) {
 // COMMENTS
 // =========================
 
-export interface CommentResponse {
-  id: number;
-  user_id: number;
-  post_id: number;
-  content: string;
-  created_at: string;
-}
-
 export function getComments(postId: number) {
   return apiRequest<CommentResponse[]>(`/posts/${postId}/comments`);
 }
@@ -374,13 +326,6 @@ export function deleteComment(commentId: number) {
 // LIKES
 // =========================
 
-export interface LikeResponse {
-  id: number;
-  user_id: number;
-  post_id: number;
-  created_at: string;
-}
-
 export function likePost(postId: number) {
   return apiRequest<LikeResponse>(`/posts/${postId}/like`, {
     method: "POST",
@@ -396,13 +341,6 @@ export function unlikePost(postId: number) {
 // =========================
 // SHARES
 // =========================
-
-export interface ShareResponse {
-  id: number;
-  user_id: number;
-  post_id: number;
-  created_at: string;
-}
 
 export async function sharePost(postId: number) {
   return apiRequest(`/posts/${postId}/share`, {
@@ -433,7 +371,87 @@ export function unfollowUser(userId: number) {
 }
 
 export function getFollowStatus(userId: number) {
-  return apiRequest<{ is_following: boolean }>(
-    `/follows/status/${userId}`
+  return apiRequest<{ is_following: boolean }>(`/follows/status/${userId}`);
+}
+
+// =========================
+// FRIEND REQUESTS
+// =========================
+
+export function sendFriendRequest(receiver_id: number) {
+  return apiRequest<FriendRequestResponse>("/friend-requests/", {
+    method: "POST",
+    body: JSON.stringify({
+      receiver_id,
+    }),
+  });
+}
+
+export function cancelFriendRequest(request_id: number) {
+  return apiRequest(`/friend-requests/${request_id}`, {
+    method: "DELETE",
+  });
+}
+
+export function getFriendStatus(user_id: number) {
+  return apiRequest<FriendStatusResponse>(`/friend-requests/status/${user_id}`);
+}
+
+export function getIncomingFriendRequests() {
+  return apiRequest<IncomingFriendRequestResponse[]>(
+    "/friend-requests/incoming",
   );
+}
+
+export function acceptFriendRequest(request_id: number) {
+  return apiRequest<FriendRequestResponse>(
+    `/friend-requests/${request_id}/accept`,
+    {
+      method: "PATCH",
+    },
+  );
+}
+
+export function rejectFriendRequest(request_id: number) {
+  return apiRequest<FriendRequestResponse>(
+    `/friend-requests/${request_id}/reject`,
+    {
+      method: "PATCH",
+    },
+  );
+}
+export function removeFriend(userId: number) {
+  return apiRequest<{ message?: string }>(`/friend-requests/${userId}/remove`, {
+    method: "DELETE",
+  });
+}
+// =========================
+// CHAT
+// =========================
+
+export function getOrCreateConversation(userId: number) {
+  return apiRequest<Conversation>(`/chat/conversation/${userId}`, {
+    method: "POST",
+  });
+}
+
+export function getConversations() {
+  return apiRequest<Conversation[]>("/chat/conversations");
+}
+
+export function getMessages(conversationId: number) {
+  return apiRequest<Message[]>(`/chat/messages/${conversationId}`);
+}
+
+export function markMessagesAsRead(conversationId: number) {
+  return apiRequest<{ message: string; updated_count: number }>(
+    `/chat/messages/${conversationId}/read`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function getFriends() {
+  return apiRequest<UserCardResponse[]>("/friend-requests/friends");
 }

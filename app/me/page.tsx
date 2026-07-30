@@ -6,7 +6,9 @@ import { Edit, Camera, Sparkles, LogOut } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import RightSidebar from "@/components/RightSidebar";
 import PostCard from "@/components/PostCard";
-import { Post, Comment } from "@/lib/types";
+import Header from "@/components/Header";
+import { Post, Comment, UserCardResponse } from "@/lib/types";
+import { showConfirm } from "@/lib/confirm";
 import {
   getMyProfile,
   updateMyProfile,
@@ -15,7 +17,6 @@ import {
   uploadCover,
   getFeed,
   getAllUsers,
-  UserCardResponse,
   likePost,
   unlikePost,
   archivePost,
@@ -238,10 +239,10 @@ export default function MyProfilePage() {
           list.map((p) =>
             p.id === id
               ? {
-                ...p,
-                liked: false,
-                likes: Math.max(0, p.likes - 1),
-              }
+                  ...p,
+                  liked: false,
+                  likes: Math.max(0, p.likes - 1),
+                }
               : p,
           );
 
@@ -257,10 +258,10 @@ export default function MyProfilePage() {
           list.map((p) =>
             p.id === id
               ? {
-                ...p,
-                liked: true,
-                likes: p.likes + 1,
-              }
+                  ...p,
+                  liked: true,
+                  likes: p.likes + 1,
+                }
               : p,
           );
 
@@ -276,11 +277,17 @@ export default function MyProfilePage() {
   };
 
   const handleDeletePost = async (id: number) => {
+    const result = await showConfirm(
+      "Delete Post?",
+      "This action cannot be undone.",
+      "Delete",
+    );
+
+    if (!result.isConfirmed) return;
+
     try {
       await deletePost(id);
-
       showToast("Post deleted");
-
       await loadData();
     } catch {
       showToast("Delete failed");
@@ -319,9 +326,9 @@ export default function MyProfilePage() {
         list.map((p) =>
           p.id === id
             ? {
-              ...p,
-              content: newContent,
-            }
+                ...p,
+                content: newContent,
+              }
             : p,
         );
 
@@ -364,9 +371,9 @@ export default function MyProfilePage() {
         list.map((post) =>
           post.id === postId
             ? {
-              ...post,
-              comments: mappedComments,
-            }
+                ...post,
+                comments: mappedComments,
+              }
             : post,
         );
 
@@ -423,16 +430,15 @@ export default function MyProfilePage() {
   if (loading) {
     return (
       <div
-        className="
-        flex min-h-screen 
-        items-center justify-center
-        text-gray-950
-        "
-        style={{
-          background: "linear-gradient(135deg,#FAFAFF,#F3F0FF,#EEF2FF)",
-        }}
+        className="flex min-h-screen flex-col"
+        style={{ background: "var(--bg)" }}
       >
-        <p className="text-sm font-medium">Loading profile...</p>
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-sm font-semibold text-[#9B9BB0]">
+            Loading profile...
+          </p>
+        </div>
       </div>
     );
   }
@@ -440,16 +446,15 @@ export default function MyProfilePage() {
   if (!profile) {
     return (
       <div
-        className="
-        flex min-h-screen 
-        items-center justify-center
-        text-gray-950
-        "
-        style={{
-          background: "linear-gradient(135deg,#FAFAFF,#F3F0FF,#EEF2FF)",
-        }}
+        className="flex min-h-screen flex-col"
+        style={{ background: "var(--bg)" }}
       >
-        <p className="text-sm font-medium">Profile not found</p>
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-sm font-semibold text-[#9B9BB0]">
+            Profile not found
+          </p>
+        </div>
       </div>
     );
   }
@@ -458,11 +463,11 @@ export default function MyProfilePage() {
 
   return (
     <div
-      className="relative min-h-screen overflow-hidden text-gray-950"
-      style={{
-        background: "linear-gradient(135deg,#FAFAFF,#F3F0FF,#EEF2FF)",
-      }}
+      className="relative min-h-screen flex flex-col"
+      style={{ background: "var(--bg)" }}
     >
+      <Header />
+
       {/* Toast animation + micro-interaction keyframes */}
       <style>{`
         @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
@@ -473,45 +478,24 @@ export default function MyProfilePage() {
       {toast && (
         <div
           className="toast-pop fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-2xl px-5 py-3 text-sm font-semibold text-white shadow-xl"
-          style={{
-            background: "linear-gradient(90deg,#7C3AED,#6366F1)",
-          }}
+          style={{ background: "#0F0F1A", boxShadow: "var(--shadow-toast)" }}
         >
           {toast}
         </div>
       )}
 
-      <div className="flex">
-        <Sidebar />
+      <div className="w-full max-w-[1440px] mx-auto px-6 mt-6 md:mt-8 flex-1 pb-12">
+        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[260px_1fr_280px] gap-6 md:gap-8 items-start">
+          {/* LEFT SIDEBAR */}
+          <Sidebar />
 
-        <main
-          className="
-          mx-auto
-          w-full
-          max-w-6xl
-          px-4 py-6
-          lg:px-8
-          "
-        >
-          <div
-            className="
-            grid
-            grid-cols-1
-            gap-6
-            lg:grid-cols-[1fr_320px]
-            "
-          >
+          {/* CENTER & RIGHT COLUMN */}
+          <div className="col-span-1 md:col-span-1 lg:col-span-2 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 md:gap-8 items-start">
             <div className="min-w-0">
-              {/* Profile Glass Card */}
+              {/* Profile Card */}
               <section
-                className="
-                overflow-hidden
-                rounded-3xl
-                border border-white/80
-                bg-white/60
-                shadow-xl
-                backdrop-blur-xl
-                "
+                className="overflow-hidden rounded-2xl border border-[#E8E9F0] bg-white shadow-sm"
+                style={{ boxShadow: "var(--shadow-card)" }}
               >
                 {/* Cover */}
                 <div
@@ -535,12 +519,10 @@ export default function MyProfilePage() {
                     />
                   ) : (
                     <div
-                      className="
-                      absolute inset-0
-                      "
+                      className="absolute inset-0"
                       style={{
                         background:
-                          "linear-gradient(135deg,#DDD6FE,#C7D2FE,#E0E7FF)",
+                          "linear-gradient(135deg, #5B5CEB 0%, #7879F1 50%, #9B9CF5 100%)",
                       }}
                     />
                   )}
@@ -618,11 +600,11 @@ export default function MyProfilePage() {
                       rounded-full
                       border-4
                       border-white
-                      bg-gradient-to-br
-                      from-violet-600
-                      to-indigo-500
                       shadow-lg
                       "
+                      style={{
+                        background: "linear-gradient(135deg, #5B5CEB, #7879F1)",
+                      }}
                     >
                       {profile.avatar_url ? (
                         <Image
@@ -695,26 +677,19 @@ export default function MyProfilePage() {
                         gap-2
                         rounded-full
                         border
-                        border-white/80
-                        bg-white/60
+                        border-[#E8E9F0]
+                        bg-white
                         px-4
                         py-2
                         text-sm
                         font-semibold
-                        text-gray-700
+                        text-[#5C5C72]
                         shadow-sm
-                        backdrop-blur-xl
                         transition
-                        hover:bg-white
+                        hover:bg-[#F5F7FB]
                         "
                       >
-                        <Edit
-                          className="
-                          h-4
-                          w-4
-                          text-violet-600
-                          "
-                        />
+                        <Edit className="h-4 w-4 text-[#5B5CEB]" />
 
                         {editing ? "Cancel" : "Edit Profile"}
                       </button>
@@ -757,10 +732,9 @@ export default function MyProfilePage() {
                       space-y-4
                       rounded-2xl
                       border
-                      border-white/80
-                      bg-white/60
+                      border-[#E8E9F0]
+                      bg-white
                       p-5
-                      backdrop-blur-xl
                       "
                     >
                       {/* Username */}
@@ -782,24 +756,24 @@ export default function MyProfilePage() {
                           value={usernameDraft}
                           onChange={(e) => setUsernameDraft(e.target.value)}
                           className="
-    w-full
-    rounded-xl
-    px-4
-    py-3
-    text-sm
-    text-gray-950
-    bg-white/80
-    border
-    border-gray-200
-    shadow-sm
-    outline-none
-    transition
-    placeholder:text-gray-400
-    hover:border-violet-300
-    focus:border-violet-500
-    focus:ring-4
-    focus:ring-violet-500/10
-  "
+                            w-full
+                            rounded-xl
+                            px-4
+                            py-3
+                            text-sm
+                            text-[#0F0F1A]
+                            bg-white
+                            border
+                            border-[#E8E9F0]
+                            shadow-sm
+                            outline-none
+                            transition
+                            placeholder:text-[#9B9BB0]
+                            hover:border-[#5B5CEB]
+                            focus:border-[#5B5CEB]
+                            focus:ring-4
+                            focus:ring-[#5B5CEB]/10
+                          "
                         />
                       </div>
 
@@ -822,24 +796,24 @@ export default function MyProfilePage() {
                           onChange={(e) => setBioDraft(e.target.value)}
                           rows={3}
                           className="
-    w-full
-    rounded-xl
-    p-4
-    text-sm
-    leading-relaxed
-    text-gray-950
-    bg-white/80
-    border
-    border-gray-200
-    shadow-sm
-    resize-none
-    outline-none
-    transition
-    hover:border-violet-300
-    focus:border-violet-500
-    focus:ring-4
-    focus:ring-violet-500/10
-  "
+                            w-full
+                            rounded-xl
+                            p-4
+                            text-sm
+                            leading-relaxed
+                            text-[#0F0F1A]
+                            bg-white
+                            border
+                            border-[#E8E9F0]
+                            shadow-sm
+                            resize-none
+                            outline-none
+                            transition
+                            hover:border-[#5B5CEB]
+                            focus:border-[#5B5CEB]
+                            focus:ring-4
+                            focus:ring-[#5B5CEB]/10
+                          "
                         />
                       </div>
 
@@ -853,9 +827,6 @@ export default function MyProfilePage() {
                           onClick={handleUpdateProfile}
                           className="
                           rounded-full
-                          bg-gradient-to-r
-                          from-violet-600
-                          to-indigo-600
                           px-5
                           py-2
                           text-sm
@@ -865,6 +836,10 @@ export default function MyProfilePage() {
                           transition
                           hover:opacity-90
                           "
+                          style={{
+                            background:
+                              "linear-gradient(135deg, #5B5CEB, #7879F1)",
+                          }}
                         >
                           Save Changes
                         </button>
@@ -916,12 +891,20 @@ export default function MyProfilePage() {
               {/* Profile Stats Bar */}
               <div className="mt-4 flex gap-6 px-1">
                 <div className="text-center">
-                  <p className="text-lg font-bold text-gray-900">{activePosts.length}</p>
-                  <p className="text-xs font-medium text-gray-500 mt-0.5">Posts</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {activePosts.length}
+                  </p>
+                  <p className="text-xs font-medium text-gray-500 mt-0.5">
+                    Posts
+                  </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-gray-900">{archivedPosts.length}</p>
-                  <p className="text-xs font-medium text-gray-500 mt-0.5">Archived</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {archivedPosts.length}
+                  </p>
+                  <p className="text-xs font-medium text-gray-500 mt-0.5">
+                    Archived
+                  </p>
                 </div>
               </div>
 
@@ -933,11 +916,10 @@ export default function MyProfilePage() {
                 gap-1
                 rounded-2xl
                 border
-                border-white/80
-                bg-white/60
-                p-1
+                border-[#E8E9F0]
+                bg-white
+                p-1.5
                 shadow-sm
-                backdrop-blur-xl
                 "
               >
                 <button
@@ -950,11 +932,20 @@ export default function MyProfilePage() {
                   text-sm
                   font-semibold
                   transition
-                  ${activeTab === "posts"
-                      ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white"
-                      : "text-gray-500 hover:bg-white"
-                    }
+                  ${
+                    activeTab === "posts"
+                      ? "text-white shadow-sm"
+                      : "text-[#9B9BB0] hover:text-[#5C5C72] hover:bg-[#F5F7FB]"
+                  }
                   `}
+                  style={
+                    activeTab === "posts"
+                      ? {
+                          background:
+                            "linear-gradient(135deg, #5B5CEB, #7879F1)",
+                        }
+                      : {}
+                  }
                 >
                   My Posts ({activePosts.length})
                 </button>
@@ -969,11 +960,20 @@ export default function MyProfilePage() {
                   text-sm
                   font-semibold
                   transition
-                  ${activeTab === "archived"
-                      ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white"
-                      : "text-gray-500 hover:bg-white"
-                    }
+                  ${
+                    activeTab === "archived"
+                      ? "text-white shadow-sm"
+                      : "text-[#9B9BB0] hover:text-[#5C5C72] hover:bg-[#F5F7FB]"
+                  }
                   `}
+                  style={
+                    activeTab === "archived"
+                      ? {
+                          background:
+                            "linear-gradient(135deg, #5B5CEB, #7879F1)",
+                        }
+                      : {}
+                  }
                 >
                   Archived ({archivedPosts.length})
                 </button>
@@ -988,15 +988,14 @@ export default function MyProfilePage() {
                 {visiblePosts.length === 0 ? (
                   <div
                     className="
-                    rounded-3xl
+                    rounded-2xl
                     border
-                    border-white/80
-                    bg-white/60
+                    border-[#E8E9F0]
+                    bg-white
                     px-6
                     py-16
                     text-center
                     shadow-sm
-                    backdrop-blur-xl
                     "
                   >
                     <Sparkles
@@ -1004,7 +1003,7 @@ export default function MyProfilePage() {
                       mx-auto
                       h-7
                       w-7
-                      text-violet-600
+                      text-[#5B5CEB]
                       "
                     />
 
@@ -1013,7 +1012,7 @@ export default function MyProfilePage() {
                       mt-3
                       text-sm
                       font-semibold
-                      text-gray-700
+                      text-[#0F0F1A]
                       "
                     >
                       No posts in this tab
@@ -1023,7 +1022,7 @@ export default function MyProfilePage() {
                       className="
                       mt-1
                       text-xs
-                      text-gray-500
+                      text-[#9B9BB0]
                       "
                     >
                       Create a post and it will appear here.
@@ -1058,11 +1057,9 @@ export default function MyProfilePage() {
               </section>
             </div>
 
-            {/* Right Side */}
-
             <RightSidebar />
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );
