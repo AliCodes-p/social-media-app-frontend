@@ -2,11 +2,28 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+
+import {
+  ColumnDef,
+  FilterFn,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+} from "@tanstack/react-table";
 
 import { AdminPost } from "@/lib/admin";
 import { deleteAdminPost, updateAdminPost } from "@/lib/adminapi";
 import { showConfirm } from "@/lib/confirm";
+
+import SearchInput from "@/components/ui/SearchInput";
+import DataTable from "@/components/ui/DataTable";
+import Pagination from "@/components/ui/Pagination";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface AdminPostsTableProps {
   posts: AdminPost[];
@@ -23,12 +40,7 @@ export default function AdminPostsTable({
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
-
-  const filteredPosts = posts.filter(
-    (post) =>
-      post.username.toLowerCase().includes(search.toLowerCase()) ||
-      post.content.toLowerCase().includes(search.toLowerCase()),
-  );
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   async function handleDelete(postId: number) {
     const result = await showConfirm(
@@ -82,101 +94,170 @@ export default function AdminPostsTable({
     }
   }
 
+  const columns: ColumnDef<AdminPost>[] = [
+    {
+      accessorKey: "username",
+      header: "Author",
+      cell: ({ row }) => {
+        const post = row.original;
+        const initials = post.username?.charAt(0).toUpperCase() ?? "U";
+
+        return (
+          <div className="flex items-center gap-3 min-w-0">
+            <Avatar size="sm" className="bg-slate-100 text-slate-700">
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+
+            <div className="min-w-0">
+              <div className="truncate text-sm font-medium text-slate-900">
+                {post.username}
+              </div>
+              <div className="truncate text-sm text-slate-500">
+                {new Date(post.created_at).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      },
+    },
+
+    {
+      accessorKey: "content",
+      header: "Post",
+      cell: ({ row }) => (
+        <div className="max-w-xl text-sm text-slate-700 line-clamp-2">
+          {row.original.content}
+        </div>
+      ),
+    },
+
+    {
+      accessorKey: "likes_count",
+      header: "Likes",
+    },
+
+    {
+      accessorKey: "comments_count",
+      header: "Comments",
+    },
+
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status = row.original.status;
+
+        return (
+          <Badge
+            className={`rounded-full px-3 py-1.5 text-xs font-medium border-transparent ${
+              status === "archived"
+                ? "bg-amber-50 text-amber-600"
+                : "bg-emerald-50 text-emerald-600"
+            }`}
+          >
+            {status === "archived" ? "Archived" : "Published"}
+          </Badge>
+        );
+      },
+    },
+
+    {
+      id: "actions",
+      header: "Actions",
+      enableSorting: false,
+      cell: ({ row }) => {
+        const post = row.original;
+
+        return (
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              className="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingPost(post);
+              }}
+            >
+              Edit
+            </Button>
+            <Button
+              size="sm"
+              className="rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
+              disabled={deletingId === post.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(post.id);
+              }}
+            >
+              {deletingId === post.id ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+
+  const globalFilterFn: FilterFn<AdminPost> = (row, _columnId, filterValue) => {
+    const value = filterValue.toLowerCase();
+
+    return (
+      row.original.username.toLowerCase().includes(value) ||
+      row.original.content.toLowerCase().includes(value)
+    );
+  };
+
+  const table = useReactTable({
+    data: posts,
+    columns,
+    state: {
+      sorting,
+      globalFilter: search,
+    },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setSearch,
+    globalFilterFn,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
   return (
-    <>
-      <div className="relative mb-4">
-        <Search
-          size={18}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-        />
+    <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <p className="text-base font-semibold text-slate-900">Posts</p>
+          <p className="text-sm text-slate-500">
+            Manage published and archived posts in the admin dashboard.
+          </p>
+        </div>
 
-        <input
-          type="text"
-          placeholder="Search posts..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-        />
+        <div className="w-full max-w-sm">
+          <SearchInput
+            value={(table.getState().globalFilter as string) ?? ""}
+            onChange={table.setGlobalFilter}
+            placeholder="Search posts..."
+          />
+        </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <table className="w-full text-left">
-          <thead className="border-b bg-gray-50">
-            <tr>
-              <th className="px-6 py-4">Author</th>
-              <th className="px-6 py-4">Content</th>
-              <th className="px-6 py-4">Likes</th>
-              <th className="px-6 py-4">Comments</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-center">Actions</th>
-            </tr>
-          </thead>
+      <DataTable
+        table={table}
+        onRowClick={(post) => router.push(`/admin/posts/${post.id}`)}
+      />
 
-          <tbody>
-            {filteredPosts.map((post) => (
-              <tr
-                key={post.id}
-                onClick={() => router.push(`/admin/posts/${post.id}`)}
-                className="cursor-pointer border-b last:border-0 hover:bg-gray-50"
-              >
-                <td className="px-6 py-4 font-medium">{post.username}</td>
-
-                <td className="max-w-xs truncate px-6 py-4">{post.content}</td>
-
-                <td className="px-6 py-4">{post.likes_count}</td>
-
-                <td className="px-6 py-4">{post.comments_count}</td>
-
-                <td className="px-6 py-4">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${
-                      post.status === "active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {post.status}
-                  </span>
-                </td>
-
-                <td className="px-6 py-4">
-                  <div className="flex justify-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingPost(post);
-                      }}
-                      className="rounded-md bg-indigo-600 px-3 py-1 text-sm text-white hover:bg-indigo-700"
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(post.id);
-                      }}
-                      disabled={deletingId === post.id}
-                      className="rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700 disabled:opacity-50"
-                    >
-                      {deletingId === post.id ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {filteredPosts.length === 0 && (
-          <div className="py-10 text-center text-gray-500">No posts found.</div>
-        )}
-      </div>
+      <Pagination table={table} />
 
       {editingPost && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="mb-5 text-xl font-bold">Edit Post</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+            <h2 className="mb-5 text-xl font-semibold text-slate-900">
+              Edit Post
+            </h2>
 
             <textarea
               value={editingPost.content}
@@ -186,7 +267,7 @@ export default function AdminPostsTable({
                   content: e.target.value,
                 })
               }
-              className="mb-4 h-32 w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-indigo-500"
+              className="mb-4 h-32 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500"
             />
 
             <select
@@ -197,31 +278,33 @@ export default function AdminPostsTable({
                   status: e.target.value,
                 })
               }
-              className="mb-5 w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-indigo-500"
+              className="mb-5 w-full rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500"
             >
               <option value="active">Active</option>
               <option value="archived">Archived</option>
             </select>
 
             <div className="flex justify-end gap-3">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setEditingPost(null)}
-                className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300"
+                className="rounded-full px-4 py-2"
               >
                 Cancel
-              </button>
-
-              <button
+              </Button>
+              <Button
+                size="sm"
+                className="rounded-full bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
                 onClick={handleUpdate}
                 disabled={saving}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

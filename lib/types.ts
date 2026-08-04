@@ -73,6 +73,8 @@ export interface Conversation {
     content: string;
     created_at: string;
   } | null;
+
+  unread_count: number;
 }
 
 export interface Message {
@@ -82,6 +84,7 @@ export interface Message {
   content: string;
   status: "sent" | "delivered" | "read";
   created_at: string;
+  tempId?: string;
 }
 
 export interface FeedPost {
@@ -116,6 +119,9 @@ export interface UserProfileResponse {
   bio: string | null;
   avatar_url: string | null;
   cover_url: string | null;
+  followers_count: number;
+  following_count: number;
+  posts_count: number;
 }
 
 export interface UserCardResponse {

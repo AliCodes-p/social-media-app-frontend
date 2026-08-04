@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface StatCardProps {
   title: string;
@@ -8,18 +9,22 @@ interface StatCardProps {
 
 export default function StatCard({ title, value, icon }: StatCardProps) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500">{title}</p>
-
-          <h2 className="mt-2 text-3xl font-bold text-gray-800">{value}</h2>
-        </div>
-
-        <div className="rounded-full bg-indigo-100 p-3 text-indigo-600">
+    <Card className="bg-white ring-1 ring-slate-100 rounded-xl transition-transform hover:shadow-md hover:-translate-y-0.5">
+      <CardHeader className="items-center gap-4">
+        <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
           {icon}
         </div>
-      </div>
-    </div>
+
+        <div className="min-w-0">
+          <CardTitle className="text-sm text-slate-500">{title}</CardTitle>
+        </div>
+      </CardHeader>
+
+      <CardContent className="pt-3 pb-4">
+        <div className="text-2xl font-semibold tracking-tight text-slate-900">
+          {value}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

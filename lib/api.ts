@@ -30,8 +30,7 @@ function getErrorMessage(data: ApiErrorBody, fallback: string): string {
   return fallback;
 }
 
-/** Internal flag to avoid infinite refresh loops */
-let _isRefreshing = false;
+let refreshPromise: Promise<Response> | null = null;
 
 export async function apiRequest<T>(
   path: string,
@@ -49,22 +48,20 @@ export async function apiRequest<T>(
   });
 
   // Auto-refresh on 401: try refreshing the access token once, then retry
-  if (response.status === 401 && _retry && !_isRefreshing) {
-    _isRefreshing = true;
-    try {
-      const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+  if (response.status === 401 && _retry) {
+    if (!refreshPromise) {
+      refreshPromise = fetch(`${API_BASE}/auth/refresh`, {
         method: "POST",
         credentials: "include",
+      }).finally(() => {
+        refreshPromise = null;
       });
-      if (refreshRes.ok) {
-        // Retry the original request now that we have a fresh token
-        _isRefreshing = false;
-        return apiRequest<T>(path, options, false);
-      }
-    } catch {
-      // Refresh failed — fall through and throw original error below
-    } finally {
-      _isRefreshing = false;
+    }
+
+    const refreshRes = await refreshPromise;
+
+    if (refreshRes.ok) {
+      return apiRequest<T>(path, options, false);
     }
   }
 
@@ -129,6 +126,15 @@ export function refreshSession() {
 export function logout() {
   return apiRequest<{ message: string }>("/auth/logout", {
     method: "POST",
+  }).then((res) => {
+    if (typeof window !== "undefined") {
+      try {
+        window.dispatchEvent(new Event("auth-logout"));
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    return res;
   });
 }
 
@@ -454,4 +460,10 @@ export function markMessagesAsRead(conversationId: number) {
 
 export function getFriends() {
   return apiRequest<UserCardResponse[]>("/friend-requests/friends");
+}
+export function getUnreadMessageCounts() {
+  return apiRequest<{
+    total_unread: number;
+    conversations: Record<number, number>;
+  }>("/chat/unread-count");
 }

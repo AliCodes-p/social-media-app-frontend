@@ -330,6 +330,8 @@ export default function ProfilePage() {
     try {
       await followUser(userId);
       setIsFollowing(true);
+      // notify other components (Sidebar) to refresh counts
+      window.dispatchEvent(new Event("follow-counts-updated"));
       showToast("User followed");
     } catch {
       showToast("Follow failed");
@@ -348,6 +350,8 @@ export default function ProfilePage() {
     try {
       await unfollowUser(userId);
       setIsFollowing(false);
+      // notify other components (Sidebar) to refresh counts
+      window.dispatchEvent(new Event("follow-counts-updated"));
       showToast("User unfollowed");
     } catch {
       showToast("Unfollow failed");

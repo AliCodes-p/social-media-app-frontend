@@ -1,9 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { getCurrentUser, getUserProfile, logout } from "@/lib/api";
+import {
+  getCurrentUser,
+  getMyProfile,
+  logout,
+  getIncomingFriendRequests,
+  getUnreadMessageCounts,
+} from "@/lib/api";
 import {
   Home,
   PlusCircle,
@@ -50,28 +56,115 @@ function SidebarContent() {
     avatar_url?: string | null;
     cover_url?: string | null;
     posts_count?: number;
+    followers_count?: number;
+    following_count?: number;
   } | null>(null);
 
   const [userLoading, setUserLoading] = useState(true);
+  const [friendRequestCount, setFriendRequestCount] = useState(0);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const intervalRef = useRef<number | null>(null);
+  const loadFriendRequests = async () => {
+    // don't run if not authenticated
+    if (!user) return;
+    try {
+      const requests = await getIncomingFriendRequests();
+      setFriendRequestCount(requests.length);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  const loadUnreadMessages = async () => {
+    // don't run if not authenticated
+    if (!user) return;
+    try {
+      const data = await getUnreadMessageCounts();
+      setUnreadMessageCount(data.total_unread);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+
+    const handleMessagesRead = () => {
+      setUnreadMessageCount(0);
+    };
+
+    const loadProfile = async () => {
+      try {
+        const myProfile = await getMyProfile();
+        setProfile(myProfile);
+      } catch (error) {
+        console.error("Failed to load sidebar profile", error);
+      }
+    };
+
+    const handleFollowCountsUpdate = () => {
+      loadProfile();
+    };
+
+    window.addEventListener("messages-read", handleMessagesRead);
+    window.addEventListener("follow-counts-updated", handleFollowCountsUpdate);
+
+    const handleAuthLogout = () => {
+      // stop polling and reset sidebar state immediately
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+
+      setUser(null);
+      setProfile(null);
+      setFriendRequestCount(0);
+      setUnreadMessageCount(0);
+      setUserLoading(false);
+    };
+
+    window.addEventListener("auth-logout", handleAuthLogout as EventListener);
+
     getCurrentUser()
       .then(async (me) => {
         setUser(me);
-        try {
-          const p = await getUserProfile(me.username);
-          setProfile({
-            bio: p.bio,
-            avatar_url: p.avatar_url,
-            cover_url: p.cover_url,
-            posts_count: p.posts?.length ?? 0,
-          });
-        } catch {
-          // optional profile data
-        }
+        await loadProfile();
+
+        // Load notification counts only after authentication succeeds
+        await loadFriendRequests();
+        await loadUnreadMessages();
+
+        interval = setInterval(() => {
+          loadFriendRequests();
+          loadUnreadMessages();
+        }, 10000);
+        intervalRef.current = interval as unknown as number;
       })
-      .catch(() => setUser(null))
-      .finally(() => setUserLoading(false));
+      .catch(() => {
+        setUser(null);
+      })
+      .finally(() => {
+        setUserLoading(false);
+      });
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+
+      window.removeEventListener("messages-read", handleMessagesRead);
+      window.removeEventListener(
+        "follow-counts-updated",
+        handleFollowCountsUpdate,
+      );
+      window.removeEventListener(
+        "auth-logout",
+        handleAuthLogout as EventListener,
+      );
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -140,9 +233,8 @@ function SidebarContent() {
 
   const initials = user?.username?.charAt(0).toUpperCase() ?? "?";
 
-  // Calculate deterministic stats for rendering mockup data that looks rich
-  const followerCount = user ? user.id * 149 + 102 : 0;
-  const followingCount = user ? user.id * 89 + 64 : 0;
+  const followerCount = profile?.followers_count ?? 0;
+  const followingCount = profile?.following_count ?? 0;
 
   return (
     <div className="w-full flex flex-col gap-4">
@@ -263,7 +355,52 @@ function SidebarContent() {
                 <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#5B5CEB]" />
               )}
               <span>{item.icon}</span>
-              <span className="flex-1">{item.label}</span>
+              <div className="flex-1 flex items-center justify-between">
+                <span>{item.label}</span>
+
+                <div className="flex items-center gap-2">
+                  {item.label === "Friend Requests" &&
+                    friendRequestCount > 0 && (
+                      <span
+                        className="
+          min-w-5
+          h-5
+          px-1.5
+          rounded-full
+          bg-red-500
+          text-white
+          text-[11px]
+          font-semibold
+          flex
+          items-center
+          justify-center
+        "
+                      >
+                        {friendRequestCount}
+                      </span>
+                    )}
+
+                  {item.label === "Messages" && unreadMessageCount > 0 && (
+                    <span
+                      className="
+          min-w-5
+          h-5
+          px-1.5
+          rounded-full
+          bg-[#5B5CEB]
+          text-white
+          text-[11px]
+          font-semibold
+          flex
+          items-center
+          justify-center
+        "
+                    >
+                      {unreadMessageCount}
+                    </span>
+                  )}
+                </div>
+              </div>
             </Link>
           );
         })}

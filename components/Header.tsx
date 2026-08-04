@@ -47,9 +47,11 @@ function SphereIcon({ size = 18 }: { size?: number }) {
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<{ id: number; username: string } | null>(
-    null,
-  );
+  const [user, setUser] = useState<{
+    id: number;
+    username: string;
+    avatar_url: string | null;
+  } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -179,12 +181,20 @@ export default function Header() {
                 className="flex items-center gap-2.5 group"
               >
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden ring-2 ring-[#EEEFFE] transition-transform group-hover:scale-105"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden ring-2 ring-[#EEEFFE]"
                   style={{
                     background: "linear-gradient(135deg, #5B5CEB, #7879F1)",
                   }}
                 >
-                  {initials}
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.username}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    initials
+                  )}
                 </div>
                 <span className="text-[13px] font-bold text-[#0F0F1A] hover:text-[#5B5CEB] transition truncate max-w-[80px] hidden lg:inline">
                   {user.username}

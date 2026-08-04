@@ -24,28 +24,24 @@ export default function MessageBubble({
       {!isMine && (
         <img
           src={conversation?.other_user.avatar_url || "/default-avatar.png"}
-          className="w-8 h-8 rounded-full object-cover"
           alt="avatar"
+          className="w-8 h-8 rounded-full object-cover shrink-0"
         />
       )}
 
       <div
-        className={`max-w-xs md:max-w-md px-4 py-2 rounded-2xl shadow-sm ${
+        className={`max-w-[85%] md:max-w-[75%] min-w-0 px-4 py-2 rounded-2xl shadow-sm ${
           isMine
             ? "bg-indigo-500 text-white rounded-br-md"
             : "bg-white/80 backdrop-blur-md text-gray-800 rounded-bl-md"
         }`}
       >
-        <div className="break-words">{message.content}</div>
+        <div className="whitespace-pre-wrap break-all">{message.content}</div>
 
         <div
-          className={`
-            text-[10px]
-            mt-1
-            text-right
-            whitespace-nowrap
-            ${isMine ? "text-white/70" : "text-gray-500"}
-          `}
+          className={`mt-1 text-[10px] text-right whitespace-nowrap ${
+            isMine ? "text-white/70" : "text-gray-500"
+          }`}
         >
           {new Date(message.created_at).toLocaleTimeString([], {
             hour: "2-digit",

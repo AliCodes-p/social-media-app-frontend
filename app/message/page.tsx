@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 import { connectChatSocket, getChatSocket } from "@/lib/chatsocket";
 
@@ -40,10 +41,12 @@ export default function MessagesPage() {
 
   const [loading, setLoading] = useState(true);
 
+  const pathname = usePathname();
   const socketConnected = useRef(false);
   const markingAsRead = useRef(false);
   const selectedConversationRef = useRef<Conversation | null>(null);
   const currentUserIdRef = useRef<number>(0);
+  const pathnameRef = useRef<string>(pathname);
 
   // Keep refs synchronized with state
   useEffect(() => {
@@ -53,6 +56,14 @@ export default function MessagesPage() {
   useEffect(() => {
     currentUserIdRef.current = currentUserId;
   }, [currentUserId]);
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+
+    if (pathname !== "/message") {
+      selectedConversationRef.current = null;
+    }
+  }, [pathname]);
 
   useEffect(() => {
     loadInitialData();
@@ -68,12 +79,8 @@ export default function MessagesPage() {
         getConversations(),
         getFriends(),
       ]);
-
       setConversations(chats);
       setFriends(friendList);
-
-      // Don't automatically select the first conversation.
-      // The user will select one manually.
     } catch (error) {
       console.error(error);
     } finally {
@@ -93,47 +100,104 @@ export default function MessagesPage() {
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      // Handle read receipt events
+      // Handle read receipts
+      // Handle read receipts
       if (data.type === "read_receipt") {
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === data.message_id ? { ...m, status: "read" as const } : m,
+            m.id === data.message_id
+              ? {
+                  ...m,
+                  status: "read" as const,
+                }
+              : m,
           ),
         );
+
         return;
       }
 
-      // Handle new messages
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === data.id)) {
-          return prev;
-        }
+      const isOnMessagePage = pathnameRef.current === "/message";
+      const currentConv = isOnMessagePage
+        ? selectedConversationRef.current
+        : null;
+      const currentUser = currentUserIdRef.current;
 
-        const updated = [...prev, data];
+      // -----------------------------
+      // Update conversation sidebar
+      // -----------------------------
+      setConversations((prev) => {
+        const existing = prev.find((c) => c.id === data.conversation_id);
 
-        // WhatsApp-style: Mark as read if message is from another user in the selected conversation
-        const currentConv = selectedConversationRef.current;
-        const currentUser = currentUserIdRef.current;
+        if (!existing) return prev;
 
-        if (
-          currentConv &&
-          data.conversation_id === currentConv.id &&
-          data.sender_id !== currentUser
-        ) {
-          if (!markingAsRead.current) {
-            markingAsRead.current = true;
-            markMessagesAsRead(currentConv.id)
-              .then(() => {
-                markingAsRead.current = false;
-              })
-              .catch(() => {
-                markingAsRead.current = false;
-              });
-          }
-        }
+        const updated = {
+          ...existing,
+          last_message: {
+            content: data.content,
+            created_at: data.created_at,
+          },
+          unread_count:
+            data.sender_id !== currentUser &&
+            currentConv?.id !== data.conversation_id
+              ? existing.unread_count + 1
+              : existing.unread_count,
+        };
 
-        return updated;
+        return [updated, ...prev.filter((c) => c.id !== data.conversation_id)];
       });
+
+      if (currentConv && currentConv.id === data.conversation_id) {
+        setMessages((prev) => {
+          // Already received this database message
+          if (prev.some((m) => m.id === data.id)) {
+            return prev;
+          }
+
+          // Replace optimistic message sent by current user
+          if (data.sender_id === currentUser) {
+            const optimisticIndex = prev.findIndex(
+              (m) =>
+                m.sender_id === currentUser &&
+                m.content === data.content &&
+                m.id > 1000000000000,
+            );
+
+            if (optimisticIndex !== -1) {
+              const updated = [...prev];
+              updated[optimisticIndex] = data;
+              return updated;
+            }
+          }
+
+          // Message from other user
+          return [...prev, data];
+        });
+
+        // Mark as read immediately
+        if (data.sender_id !== currentUser && !markingAsRead.current) {
+          markingAsRead.current = true;
+
+          markMessagesAsRead(currentConv.id)
+            .then(() => {
+              markingAsRead.current = false;
+
+              setConversations((prev) =>
+                prev.map((conv) =>
+                  conv.id === currentConv.id
+                    ? {
+                        ...conv,
+                        unread_count: 0,
+                      }
+                    : conv,
+                ),
+              );
+            })
+            .catch(() => {
+              markingAsRead.current = false;
+            });
+        }
+      }
     };
 
     socket.onclose = () => {
@@ -149,18 +213,37 @@ export default function MessagesPage() {
 
     return () => {
       socketConnected.current = false;
+      socket.onmessage = null;
+      socket.onclose = null;
+      socket.onerror = null;
     };
   }, [currentUserId]);
 
   async function selectConversation(conversation: Conversation) {
     setSelectedConversation(conversation);
 
+    selectedConversationRef.current = conversation;
+
+    // clear badge immediately
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === conversation.id
+          ? {
+              ...c,
+              unread_count: 0,
+            }
+          : c,
+      ),
+    );
+
+    // notify Sidebar immediately
+    window.dispatchEvent(new Event("messages-read"));
+
     try {
       const history = await getMessages(conversation.id);
 
       setMessages(history);
 
-      // Mark messages as read when opening conversation
       await markMessagesAsRead(conversation.id);
     } catch (error) {
       console.error(error);
@@ -176,6 +259,7 @@ export default function MessagesPage() {
       setMessages(history);
 
       setSelectedConversation(conversation);
+      selectedConversationRef.current = conversation;
 
       // Mark messages as read when starting a new conversation
       await markMessagesAsRead(conversation.id);
@@ -184,10 +268,18 @@ export default function MessagesPage() {
         const exists = prev.some((c) => c.id === conversation.id);
 
         if (exists) {
-          return prev;
+          return prev.map((c) =>
+            c.id === conversation.id ? { ...c, unread_count: 0 } : c,
+          );
         }
 
-        return [conversation, ...prev];
+        return [
+          {
+            ...conversation,
+            unread_count: 0,
+          },
+          ...prev,
+        ];
       });
 
       setSearch("");
@@ -207,19 +299,51 @@ export default function MessagesPage() {
   const sendMessage = (content: string) => {
     const socket = getChatSocket();
 
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
+    const conversation = selectedConversationRef.current;
+
+    if (!socket || socket.readyState !== WebSocket.OPEN || !conversation) {
       console.log("Socket not connected");
       return;
     }
 
-    if (!selectedConversation) {
-      return;
-    }
+    const tempId = `temp-${Date.now()}`;
+
+    const optimisticMessage = {
+      id: Date.now(),
+      tempId,
+      conversation_id: conversation.id,
+      sender_id: currentUserIdRef.current,
+      content,
+      created_at: new Date().toISOString(),
+      status: "sent" as const,
+    };
+
+    // Show message instantly
+    setMessages((prev) => [...prev, optimisticMessage]);
+
+    // Move conversation to top instantly
+    setConversations((prev) => {
+      const existing = prev.find((c) => c.id === conversation.id);
+
+      if (!existing) return prev;
+
+      const updated = {
+        ...existing,
+
+        last_message: {
+          content,
+          created_at: optimisticMessage.created_at,
+        },
+      };
+
+      return [updated, ...prev.filter((c) => c.id !== conversation.id)];
+    });
 
     socket.send(
       JSON.stringify({
-        conversation_id: selectedConversation.id,
+        conversation_id: conversation.id,
         content,
+        tempId,
       }),
     );
   };

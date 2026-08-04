@@ -1,10 +1,5 @@
 import { apiRequest } from "./api";
-import {
-  AdminDashboardResponse,
-  AdminUser,
-  AdminUserUpdate,
-  AdminPost,
-} from "@/lib/admin";
+import { AdminDashboardResponse, AdminUser, AdminPost } from "@/lib/admin";
 
 export async function getDashboardStats(): Promise<AdminDashboardResponse> {
   return apiRequest<AdminDashboardResponse>("/admin/dashboard", {
@@ -35,15 +30,6 @@ export async function deleteUser(userId: number) {
   });
 }
 
-export async function updateUser(
-  userId: number,
-  data: AdminUserUpdate,
-): Promise<AdminUser> {
-  return apiRequest<AdminUser>(`/admin/users/${userId}`, {
-    method: "PATCH",
-    body: JSON.stringify(data),
-  });
-}
 export async function getAdminPosts(): Promise<AdminPost[]> {
   return apiRequest<AdminPost[]>("/admin/posts", {
     method: "GET",
