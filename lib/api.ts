@@ -73,7 +73,43 @@ export async function apiRequest<T>(
 
   return data;
 }
+async function apiUploadRequest<T>(
+  path: string,
+  formData: FormData,
+  _retry = true,
+): Promise<T> {
+  let response = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
 
+  // access token expired
+  if (response.status === 401 && _retry) {
+    if (!refreshPromise) {
+      refreshPromise = fetch(`${API_BASE}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      }).finally(() => {
+        refreshPromise = null;
+      });
+    }
+
+    const refreshRes = await refreshPromise;
+
+    if (refreshRes.ok) {
+      return apiUploadRequest<T>(path, formData, false);
+    }
+  }
+
+  const data = (await response.json().catch(() => ({}))) as T & ApiErrorBody;
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(data, "Upload failed"));
+  }
+
+  return data;
+}
 export function register(username: string, email: string, password: string) {
   return apiRequest<{ message: string; user_id: number }>("/auth/register", {
     method: "POST",
@@ -187,28 +223,13 @@ export function createPost(content: string, imageUrl?: string | null) {
   });
 }
 
-export async function createPostWithImage(content: string, image: File) {
+export function createPostWithImage(content: string, image: File) {
   const formData = new FormData();
 
   formData.append("content", content);
   formData.append("image", image);
 
-  const response = await fetch(`${API_BASE}/posts/upload`, {
-    method: "POST",
-    credentials: "include",
-    body: formData,
-  });
-
-  const text = await response.text();
-
-  console.log("STATUS:", response.status);
-  console.log("BODY:", text);
-
-  if (!response.ok) {
-    throw new Error(text);
-  }
-
-  return JSON.parse(text);
+  return apiUploadRequest<FeedPost>("/posts/upload", formData);
 }
 
 export function updatePost(
@@ -266,38 +287,26 @@ export function getUserProfile(username: string) {
   );
 }
 
-export async function uploadAvatar(file: File) {
+export function uploadAvatar(file: File) {
   const formData = new FormData();
+
   formData.append("avatar", file);
 
-  const response = await fetch(`${API_BASE}/users/upload_avatar`, {
-    method: "POST",
-    credentials: "include",
-    body: formData,
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.detail || "Avatar upload failed");
-  }
-  return data as { message?: string; avatar_url?: string };
+  return apiUploadRequest<{
+    message?: string;
+    avatar_url?: string;
+  }>("/users/upload_avatar", formData);
 }
 
-export async function uploadCover(file: File) {
+export function uploadCover(file: File) {
   const formData = new FormData();
+
   formData.append("cover", file);
 
-  const response = await fetch(`${API_BASE}/users/upload_cover`, {
-    method: "POST",
-    credentials: "include",
-    body: formData,
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.detail || "Cover photo upload failed");
-  }
-  return data as { message?: string; cover_url?: string };
+  return apiUploadRequest<{
+    message?: string;
+    cover_url?: string;
+  }>("/users/upload_cover", formData);
 }
 
 // =========================
