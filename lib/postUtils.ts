@@ -1,5 +1,4 @@
-import { FeedPost, UserCardResponse } from "./api";
-import { Post } from "./types";
+import { FeedPost, UserCardResponse, Post } from "./types";
 /*Converts backend post data into the format required by frontend UI components.*/
 export function feedPostToPost(
   feed: any,
