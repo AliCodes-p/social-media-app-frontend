@@ -25,7 +25,7 @@ import {
   feedPostToPost,
 } from "@/lib/postUtils";
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import RightSidebar from "@/components/RightSidebar";
 import PostComposer from "@/components/PostComposer";
@@ -33,7 +33,7 @@ import PostCard from "@/components/PostCard";
 import FeedList from "@/components/feedlist";
 import Header from "@/components/Header";
 import { Post, Comment, UserCardResponse } from "@/lib/types";
-import { Archive, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { showConfirm } from "@/lib/confirm";
 
 function FeedSkeleton() {
@@ -74,7 +74,6 @@ function FeedSkeleton() {
 
 export default function HomePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -89,7 +88,6 @@ export default function HomePage() {
     {},
   );
   const [loading, setLoading] = useState(true);
-  const [activeNav, setActiveNav] = useState("Home");
   const [toast, setToast] = useState<string | null>(null);
   const [toastType, setToastType] = useState<"success" | "error">("success");
   const [trendingTopics, setTrendingTopics] = useState<
@@ -154,15 +152,7 @@ export default function HomePage() {
     initPage();
   }, [router]);
 
-  useEffect(() => {
-    const tab = searchParams.get("tab") ?? "Home";
-    setActiveNav(tab);
-  }, [searchParams]);
-
-  const visiblePosts =
-    activeNav === "Archived"
-      ? posts.filter((p) => p.archived)
-      : posts.filter((p) => !p.archived);
+  const visiblePosts = posts.filter((p) => !p.archived);
 
   const toggleLike = async (id: number) => {
     const post = posts.find((p) => p.id === id);
@@ -443,77 +433,50 @@ export default function HomePage() {
               className="flex-1 min-w-0 space-y-5"
               style={{ maxWidth: "640px" }}
             >
-              {/* Post Composer — only on Home tab */}
-              {activeNav === "Home" && (
-                <PostComposer
-                  allowImageUpload={true}
-                  avatarFallback={currentUser?.username?.charAt(0) ?? "U"}
-                  onPostSubmit={handlePostSubmit}
-                />
-              )}
+              <PostComposer
+                allowImageUpload={true}
+                avatarFallback={currentUser?.username?.charAt(0) ?? "U"}
+                onPostSubmit={handlePostSubmit}
+              />
 
-              {/* Archived empty state */}
-              {activeNav === "Archived" && visiblePosts.length === 0 && (
+              <FeedList
+                posts={visiblePosts}
+                onLoadMore={loadMorePosts}
+                hasMore={hasMore}
+                loadingMore={loadingMore}
+                currentUserId={currentUser?.id}
+                currentUserInitial={currentUser?.username?.charAt(0) ?? "U"}
+                onLike={toggleLike}
+                onShare={handleSharePost}
+                onUnshare={handleUnsharePost}
+                onArchive={toggleArchive}
+                onDelete={handleDeletePost}
+                onEdit={saveEdit}
+                onAddComment={addComment}
+                onLoadComments={loadComments}
+                onEditComment={handleEditComment}
+                onDeleteComment={handleDeleteComment}
+              />
+
+              {visiblePosts.length === 0 && !loading && (
                 <div
                   className="bg-white rounded-2xl px-6 py-12 text-center border border-[#E8E9F0]"
                   style={{ boxShadow: "var(--shadow-card)" }}
                 >
                   <div className="w-12 h-12 rounded-2xl bg-[#EEEFFE] flex items-center justify-center mx-auto mb-4">
-                    <Archive className="w-5 h-5" style={{ color: "#5B5CEB" }} />
+                    <CheckCircle
+                      className="w-5 h-5"
+                      style={{ color: "#5B5CEB" }}
+                    />
                   </div>
                   <p className="text-[15px] font-semibold text-[#0F0F1A] mb-1">
-                    No archived posts
+                    Your feed is empty
                   </p>
                   <p className="text-[14px] text-[#9B9BB0]">
-                    Archive a post from its menu and it&apos;ll show up here.
+                    Follow people or create your first post to get started.
                   </p>
                 </div>
               )}
-
-              {/* Post feed */}
-              {(activeNav === "Home" || activeNav === "Archived") && (
-                <FeedList
-                  posts={visiblePosts}
-                  onLoadMore={loadMorePosts}
-                  hasMore={hasMore}
-                  loadingMore={loadingMore}
-                  currentUserId={currentUser?.id}
-                  currentUserInitial={currentUser?.username?.charAt(0) ?? "U"}
-                  onLike={toggleLike}
-                  onShare={handleSharePost}
-                  onUnshare={handleUnsharePost}
-                  onArchive={toggleArchive}
-                  onDelete={handleDeletePost}
-                  onEdit={saveEdit}
-                  onAddComment={addComment}
-                  onLoadComments={loadComments}
-                  onEditComment={handleEditComment}
-                  onDeleteComment={handleDeleteComment}
-                />
-              )}
-
-              {/* Empty home feed state */}
-              {activeNav === "Home" &&
-                visiblePosts.length === 0 &&
-                !loading && (
-                  <div
-                    className="bg-white rounded-2xl px-6 py-12 text-center border border-[#E8E9F0]"
-                    style={{ boxShadow: "var(--shadow-card)" }}
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-[#EEEFFE] flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle
-                        className="w-5 h-5"
-                        style={{ color: "#5B5CEB" }}
-                      />
-                    </div>
-                    <p className="text-[15px] font-semibold text-[#0F0F1A] mb-1">
-                      Your feed is empty
-                    </p>
-                    <p className="text-[14px] text-[#9B9BB0]">
-                      Follow people or create your first post to get started.
-                    </p>
-                  </div>
-                )}
             </main>
 
             {/* RIGHT SIDEBAR */}

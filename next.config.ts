@@ -18,9 +18,10 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/backend/:path*",
-        destination: "http://localhost:8000/:path*",
+        destination: "http://13.228.70.240/:path*",
       },
     ];
   },
 };
+
 export default nextConfig;
