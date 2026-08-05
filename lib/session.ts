@@ -38,7 +38,13 @@ export async function validateSession(
 ): Promise<SessionResult> {
   console.log("========== VALIDATE SESSION ==========");
 
+  console.log("COOKIE HEADER SENT:", request.headers.get("cookie"));
+
   const meResponse = await fetchWithCookies(request, "/auth/me");
+
+  console.log("/auth/me STATUS:", meResponse.status);
+
+  console.log("/auth/me SET-COOKIE:", meResponse.headers.get("set-cookie"));
 
   console.log("ME STATUS:", meResponse.status);
   console.log("ME OK:", meResponse.ok);
@@ -69,6 +75,12 @@ export async function validateSession(
     request,
     "/auth/refresh",
     "POST",
+  );
+  console.log("/auth/refresh STATUS:", refreshResponse.status);
+
+  console.log(
+    "/auth/refresh SET-COOKIE:",
+    refreshResponse.headers.get("set-cookie"),
   );
 
   console.log("REFRESH STATUS:", refreshResponse.status);
