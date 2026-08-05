@@ -73,6 +73,7 @@ function FeedSkeleton() {
 }
 
 export default function HomePage() {
+  console.log("HOME PAGE LOADED");
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [offset, setOffset] = useState(0);
@@ -118,8 +119,12 @@ export default function HomePage() {
   useEffect(() => {
     const initPage = async () => {
       try {
-        const me = await getCurrentUser().catch(() => null);
+        const me = await getCurrentUser();
+
+        console.log("CURRENT USER FROM HOME:", me);
+
         if (!me) {
+          console.log("NO USER, REDIRECTING");
           router.replace("/auth/login");
           return;
         }

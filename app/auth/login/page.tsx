@@ -42,7 +42,12 @@ export default function LoginPage() {
 
     try {
       await loginApi(data.email, data.password);
+
+      console.log("LOGIN SUCCESS");
+
       router.push("/home");
+
+      console.log("PUSH FINISHED");
     } catch (err) {
       setApiError(err instanceof Error ? err.message : "Login failed");
     }

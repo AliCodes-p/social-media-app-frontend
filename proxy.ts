@@ -5,6 +5,7 @@ import { validateSession } from "@/lib/session";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
   const isProtectedRoute =
     pathname.startsWith("/home") ||
     pathname.startsWith("/find_friends") ||
@@ -12,42 +13,52 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/me") ||
     pathname.startsWith("/posts") ||
     pathname.startsWith("/create");
-  const isAuthPage =
-    pathname === "/login" ||
-    pathname === "/signup" ||
-    pathname === "/auth/login" ||
-    pathname === "/auth/register";
 
+  const isAuthPage =
+    pathname === "/auth/login" ||
+    pathname === "/auth/register" ||
+    pathname === "/login" ||
+    pathname === "/signup";
+
+  // Ignore other routes
   if (!isProtectedRoute && !isAuthPage) {
     return NextResponse.next();
   }
 
-  const hasAuthCookies = Boolean(
-    request.cookies.get("access_token") || request.cookies.get("refresh_token"),
-  );
+  const hasAuthCookies =
+    request.cookies.has("access_token") || request.cookies.has("refresh_token");
 
-  if (!hasAuthCookies) {
-    if (isProtectedRoute) {
-      return NextResponse.redirect(new URL("/auth/login", request.url));
-    }
+  // Protected pages need cookies
+  if (isProtectedRoute && !hasAuthCookies) {
+    return NextResponse.redirect(new URL("/auth/login", request.url));
+  }
+
+  // If no cookies on auth pages, stay there
+  if (isAuthPage && !hasAuthCookies) {
     return NextResponse.next();
   }
+  console.log("PROXY COOKIES:", request.headers.get("cookie"));
 
   const session = await validateSession(request);
 
+  console.log("SESSION RESULT:", session);
+  // User is not authenticated
   if (isProtectedRoute && !session.valid) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
+  // Already logged in, don't show login/signup
   if (isAuthPage && session.valid) {
     return NextResponse.redirect(new URL("/home", request.url));
   }
 
   const response = NextResponse.next();
 
-  session.setCookieHeaders.forEach((cookie) => {
-    response.headers.append("Set-Cookie", cookie);
-  });
+  if (session.setCookieHeaders) {
+    session.setCookieHeaders.forEach((cookie) => {
+      response.headers.append("Set-Cookie", cookie);
+    });
+  }
 
   return response;
 }
