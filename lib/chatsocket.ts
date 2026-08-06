@@ -1,6 +1,6 @@
 let socket: WebSocket | null = null;
 
-export function connectChatSocket(userId: number) {
+export async function connectChatSocket(userId: number) {
   if (
     socket &&
     (socket.readyState === WebSocket.OPEN ||
@@ -9,7 +9,17 @@ export function connectChatSocket(userId: number) {
     return socket;
   }
 
-  const socketUrl = "wss://socialsphereb.duckdns.org/chat/ws";
+  const response = await fetch("/backend/chat/ws-token", {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get websocket token");
+  }
+
+  const data = await response.json();
+
+  const socketUrl = `wss://socialsphereb.duckdns.org/chat/ws?token=${data.token}`;
 
   console.log("Connecting WebSocket:", socketUrl);
 
@@ -19,12 +29,17 @@ export function connectChatSocket(userId: number) {
     console.log("Chat socket connected");
   };
 
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log("Received:", data);
+  };
+
   socket.onerror = (error) => {
     console.error("WebSocket error:", error);
   };
 
   socket.onclose = (event) => {
-    console.log("WebSocket disconnected", event.code, event.reason);
+    console.log("WebSocket disconnected:", event.code, event.reason);
 
     socket = null;
   };
@@ -36,8 +51,6 @@ export function getChatSocket() {
   if (socket && socket.readyState === WebSocket.OPEN) {
     return socket;
   }
-
-  console.warn("Socket not connected");
 
   return null;
 }
