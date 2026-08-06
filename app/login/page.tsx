@@ -42,6 +42,11 @@ export default function LoginPage() {
 
     try {
       await loginApi(data.email, data.password);
+
+      router.refresh();
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       router.push("/home");
     } catch (err) {
       setApiError(err instanceof Error ? err.message : "Login failed");

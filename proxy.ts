@@ -36,7 +36,7 @@ export async function proxy(request: NextRequest) {
 
   // Protected pages need cookies
   if (isProtectedRoute && !hasAuthCookies) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // If no cookies on auth pages, stay there
@@ -71,12 +71,24 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/home",
     "/home/:path*",
+
+    "/find_friends",
     "/find_friends/:path*",
+
+    "/profile",
     "/profile/:path*",
+
+    "/me",
     "/me/:path*",
+
+    "/posts",
     "/posts/:path*",
+
+    "/create",
     "/create/:path*",
+
     "/login",
     "/signup",
     "/auth/login",
