@@ -5,6 +5,8 @@ import { validateSession } from "@/lib/session";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  console.log("COOKIE HEADER:", request.headers.get("cookie"));
+  console.log("ALL COOKIES:", request.cookies.getAll());
 
   const isProtectedRoute =
     pathname.startsWith("/home") ||
