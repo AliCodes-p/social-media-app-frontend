@@ -25,6 +25,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  console.log("COOKIE HEADER:", request.headers.get("cookie"));
+  console.log("ACCESS COOKIE:", request.cookies.get("access_token"));
+  console.log("REFRESH COOKIE:", request.cookies.get("refresh_token"));
+
   const hasAuthCookies =
     request.cookies.has("access_token") || request.cookies.has("refresh_token");
 
