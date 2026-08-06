@@ -91,131 +91,164 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!currentUserId || socketConnected.current) return;
 
-    const socket = connectChatSocket(currentUserId);
+    let socket: WebSocket | null = null;
 
-    socket.onopen = () => {
-      console.log("WebSocket connected");
-    };
+    async function initSocket() {
+      try {
+        socket = await connectChatSocket(currentUserId);
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      // Handle read receipts
-      // Handle read receipts
-      if (data.type === "read_receipt") {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === data.message_id
-              ? {
-                  ...m,
-                  status: "read" as const,
-                }
-              : m,
-          ),
-        );
-
-        return;
-      }
-
-      const isOnMessagePage = pathnameRef.current === "/message";
-      const currentConv = isOnMessagePage
-        ? selectedConversationRef.current
-        : null;
-      const currentUser = currentUserIdRef.current;
-
-      // -----------------------------
-      // Update conversation sidebar
-      // -----------------------------
-      setConversations((prev) => {
-        const existing = prev.find((c) => c.id === data.conversation_id);
-
-        if (!existing) return prev;
-
-        const updated = {
-          ...existing,
-          last_message: {
-            content: data.content,
-            created_at: data.created_at,
-          },
-          unread_count:
-            data.sender_id !== currentUser &&
-            currentConv?.id !== data.conversation_id
-              ? existing.unread_count + 1
-              : existing.unread_count,
+        socket.onopen = () => {
+          console.log("WebSocket connected");
         };
 
-        return [updated, ...prev.filter((c) => c.id !== data.conversation_id)];
-      });
+        socket.onmessage = (event) => {
+          const data = JSON.parse(event.data);
 
-      if (currentConv && currentConv.id === data.conversation_id) {
-        setMessages((prev) => {
-          // Already received this database message
-          if (prev.some((m) => m.id === data.id)) {
-            return prev;
-          }
-
-          // Replace optimistic message sent by current user
-          if (data.sender_id === currentUser) {
-            const optimisticIndex = prev.findIndex(
-              (m) =>
-                m.sender_id === currentUser &&
-                m.content === data.content &&
-                m.id > 1000000000000,
+          // -----------------------------
+          // Handle read receipts
+          // -----------------------------
+          if (data.type === "read_receipt") {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === data.message_id
+                  ? {
+                      ...m,
+                      status: "read" as const,
+                    }
+                  : m,
+              ),
             );
 
-            if (optimisticIndex !== -1) {
-              const updated = [...prev];
-              updated[optimisticIndex] = data;
-              return updated;
-            }
+            return;
           }
 
-          // Message from other user
-          return [...prev, data];
-        });
+          const isOnMessagePage = pathnameRef.current === "/message";
 
-        // Mark as read immediately
-        if (data.sender_id !== currentUser && !markingAsRead.current) {
-          markingAsRead.current = true;
+          const currentConv = isOnMessagePage
+            ? selectedConversationRef.current
+            : null;
 
-          markMessagesAsRead(currentConv.id)
-            .then(() => {
-              markingAsRead.current = false;
+          const currentUser = currentUserIdRef.current;
 
-              setConversations((prev) =>
-                prev.map((conv) =>
-                  conv.id === currentConv.id
-                    ? {
-                        ...conv,
-                        unread_count: 0,
-                      }
-                    : conv,
-                ),
-              );
-            })
-            .catch(() => {
-              markingAsRead.current = false;
+          // -----------------------------
+          // Update conversation sidebar
+          // -----------------------------
+          setConversations((prev) => {
+            const existing = prev.find((c) => c.id === data.conversation_id);
+
+            if (!existing) return prev;
+
+            const updated = {
+              ...existing,
+
+              last_message: {
+                content: data.content,
+                created_at: data.created_at,
+              },
+
+              unread_count:
+                data.sender_id !== currentUser &&
+                currentConv?.id !== data.conversation_id
+                  ? existing.unread_count + 1
+                  : existing.unread_count,
+            };
+
+            return [
+              updated,
+              ...prev.filter((c) => c.id !== data.conversation_id),
+            ];
+          });
+
+          // -----------------------------
+          // Update opened chat messages
+          // -----------------------------
+          if (currentConv && currentConv.id === data.conversation_id) {
+            setMessages((prev) => {
+              // prevent duplicate message
+              if (prev.some((m) => m.id === data.id)) {
+                return prev;
+              }
+
+              // replace optimistic message
+              if (data.sender_id === currentUser) {
+                const optimisticIndex = prev.findIndex(
+                  (m) =>
+                    m.sender_id === currentUser &&
+                    m.content === data.content &&
+                    m.id > 1000000000000,
+                );
+
+                if (optimisticIndex !== -1) {
+                  const updated = [...prev];
+
+                  updated[optimisticIndex] = data;
+
+                  return updated;
+                }
+              }
+
+              // incoming message
+              return [...prev, data];
             });
-        }
+
+            // -----------------------------
+            // Mark message as read
+            // -----------------------------
+            if (data.sender_id !== currentUser && !markingAsRead.current) {
+              markingAsRead.current = true;
+
+              markMessagesAsRead(currentConv.id)
+                .then(() => {
+                  markingAsRead.current = false;
+
+                  setConversations((prev) =>
+                    prev.map((conv) =>
+                      conv.id === currentConv.id
+                        ? {
+                            ...conv,
+                            unread_count: 0,
+                          }
+                        : conv,
+                    ),
+                  );
+                })
+                .catch(() => {
+                  markingAsRead.current = false;
+                });
+            }
+          }
+        };
+
+        socket.onclose = () => {
+          socketConnected.current = false;
+
+          console.log("WebSocket disconnected");
+        };
+
+        socket.onerror = (error) => {
+          console.error("WebSocket error:", error);
+        };
+
+        socketConnected.current = true;
+      } catch (error) {
+        console.error("WebSocket initialization failed:", error);
+
+        socketConnected.current = false;
       }
-    };
+    }
 
-    socket.onclose = () => {
-      socketConnected.current = false;
-      console.log("WebSocket disconnected");
-    };
-
-    socket.onerror = (error) => {
-      console.error(error);
-    };
-
-    socketConnected.current = true;
+    initSocket();
 
     return () => {
       socketConnected.current = false;
-      socket.onmessage = null;
-      socket.onclose = null;
-      socket.onerror = null;
+
+      if (socket) {
+        socket.onmessage = null;
+        socket.onclose = null;
+        socket.onerror = null;
+        socket.close();
+        socket = null;
+      }
     };
   }, [currentUserId]);
 
