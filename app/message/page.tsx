@@ -134,6 +134,7 @@ export default function MessagesPage() {
             currentConv?.id !== data.conversation_id;
 
           if (isUnreadMessage) {
+            console.log("Dispatching new message notification");
             window.dispatchEvent(new Event("new-message-received"));
           }
 

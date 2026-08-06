@@ -92,9 +92,9 @@ function SidebarContent() {
       setUnreadMessageCount(0);
     };
     const handleNewMessage = () => {
+      console.log("Sidebar received notification");
       setUnreadMessageCount((prev) => prev + 1);
     };
-
     const loadProfile = async () => {
       try {
         const myProfile = await getMyProfile();
