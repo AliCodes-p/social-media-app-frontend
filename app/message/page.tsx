@@ -129,6 +129,13 @@ export default function MessagesPage() {
             : null;
 
           const currentUser = currentUserIdRef.current;
+          const isUnreadMessage =
+            data.sender_id !== currentUser &&
+            currentConv?.id !== data.conversation_id;
+
+          if (isUnreadMessage) {
+            window.dispatchEvent(new Event("new-message-received"));
+          }
 
           // -----------------------------
           // Update conversation sidebar

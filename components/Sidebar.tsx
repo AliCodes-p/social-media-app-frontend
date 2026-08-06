@@ -91,6 +91,9 @@ function SidebarContent() {
     const handleMessagesRead = () => {
       setUnreadMessageCount(0);
     };
+    const handleNewMessage = () => {
+      setUnreadMessageCount((prev) => prev + 1);
+    };
 
     const loadProfile = async () => {
       try {
@@ -107,6 +110,7 @@ function SidebarContent() {
 
     window.addEventListener("messages-read", handleMessagesRead);
     window.addEventListener("follow-counts-updated", handleFollowCountsUpdate);
+    window.addEventListener("new-message-received", handleNewMessage);
 
     const handleAuthLogout = () => {
       // stop polling and reset sidebar state immediately
@@ -164,6 +168,7 @@ function SidebarContent() {
         "auth-logout",
         handleAuthLogout as EventListener,
       );
+      window.removeEventListener("new-message-received", handleNewMessage);
     };
   }, []);
 
