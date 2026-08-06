@@ -9,11 +9,7 @@ export function connectChatSocket(userId: number) {
     return socket;
   }
 
-  const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
-
-  const wsHost = window.location.host;
-
-  const socketUrl = `${wsProtocol}://${wsHost}/backend/chat/ws`;
+  const socketUrl = "wss://socialsphereb.duckdns.org/chat/ws";
 
   console.log("Connecting WebSocket:", socketUrl);
 
@@ -28,7 +24,7 @@ export function connectChatSocket(userId: number) {
   };
 
   socket.onclose = (event) => {
-    console.log("Chat socket closed:", event.code, event.reason);
+    console.log("WebSocket disconnected", event.code, event.reason);
 
     socket = null;
   };
