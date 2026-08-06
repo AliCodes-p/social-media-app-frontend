@@ -12,9 +12,11 @@ import {
   Conversation,
   Message,
 } from "@/lib/types";
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/backend";
-console.log("NEXT_PUBLIC_API_URL =", process.env.NEXT_PUBLIC_API_URL);
+
+// Always use the relative /backend proxy path so cookies are set on the frontend origin.
+const API_BASE = "/backend";
 console.log("API_BASE =", API_BASE);
+
 /*define error format*/
 type ApiErrorBody = {
   detail?: string | { msg: string }[];
