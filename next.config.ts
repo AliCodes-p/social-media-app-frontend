@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/backend/:path*",
-        destination: "http://13.228.70.240/:path*",
+        destination: "https://socialsphereb.duckdns.org/:path*",
       },
     ];
   },
