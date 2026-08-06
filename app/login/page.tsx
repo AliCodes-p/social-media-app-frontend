@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form";
 import { login as loginApi } from "@/lib/api";
 import { startOAuth } from "@/lib/oauth";
 import { loginSchema, type LoginFormValues } from "@/schemas/auth";
+import { connectChatSocket } from "@/lib/chatsocket";
+import { getCurrentUser } from "@/lib/api";
 
 const errorTextStyle: React.CSSProperties = {
   color: "#dc2626",
@@ -41,14 +43,23 @@ export default function LoginPage() {
     setApiError("");
 
     try {
+      console.log("1. Starting login");
+
       await loginApi(data.email, data.password);
 
-      router.refresh();
+      console.log("2. Login API finished");
 
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      const me = await getCurrentUser();
+
+      console.log("3. Current user:", me);
+
+      await connectChatSocket(me.id);
+
+      console.log("4. WebSocket connected");
 
       router.push("/home");
     } catch (err) {
+      console.error("LOGIN ERROR:", err);
       setApiError(err instanceof Error ? err.message : "Login failed");
     }
   };

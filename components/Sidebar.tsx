@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { addChatSocketListener } from "@/lib/chatsocket";
 import {
   getCurrentUser,
   getMyProfile,
@@ -64,9 +65,11 @@ function SidebarContent() {
   const [friendRequestCount, setFriendRequestCount] = useState(0);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const intervalRef = useRef<number | null>(null);
+  const listenerRegistered = useRef(false);
+
+  const userRef = useRef<number | null>(null);
   const loadFriendRequests = async () => {
-    // don't run if not authenticated
-    if (!user) return;
+    if (!userRef.current) return;
     try {
       const requests = await getIncomingFriendRequests();
       setFriendRequestCount(requests.length);
@@ -74,9 +77,12 @@ function SidebarContent() {
       console.error(error);
     }
   };
+  useEffect(() => {
+    userRef.current = user?.id ?? null;
+  }, [user]);
   const loadUnreadMessages = async () => {
-    // don't run if not authenticated
-    if (!user) return;
+    if (!userRef.current) return;
+
     try {
       const data = await getUnreadMessageCounts();
       setUnreadMessageCount(data.total_unread);
@@ -91,10 +97,7 @@ function SidebarContent() {
     const handleMessagesRead = () => {
       setUnreadMessageCount(0);
     };
-    const handleNewMessage = () => {
-      console.log("Sidebar received notification");
-      setUnreadMessageCount((prev) => prev + 1);
-    };
+
     const loadProfile = async () => {
       try {
         const myProfile = await getMyProfile();
@@ -108,12 +111,28 @@ function SidebarContent() {
       loadProfile();
     };
 
+    let removeChatListener: (() => void) | null = null;
+
+    removeChatListener = addChatSocketListener((data) => {
+      // ignore read receipts
+      if (data.type === "read_receipt") {
+        return;
+      }
+
+      // ignore non chat events
+      if (!("conversation_id" in data)) {
+        return;
+      }
+
+      if (data.sender_id === userRef.current) {
+        return;
+      }
+      setUnreadMessageCount((prev) => prev + 1);
+    });
     window.addEventListener("messages-read", handleMessagesRead);
     window.addEventListener("follow-counts-updated", handleFollowCountsUpdate);
-    window.addEventListener("new-message-received", handleNewMessage);
 
     const handleAuthLogout = () => {
-      // stop polling and reset sidebar state immediately
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -131,16 +150,18 @@ function SidebarContent() {
     getCurrentUser()
       .then(async (me) => {
         setUser(me);
+
         await loadProfile();
 
-        // Load notification counts only after authentication succeeds
         await loadFriendRequests();
+
         await loadUnreadMessages();
 
         interval = setInterval(() => {
           loadFriendRequests();
           loadUnreadMessages();
         }, 10000);
+
         intervalRef.current = interval as unknown as number;
       })
       .catch(() => {
@@ -151,24 +172,28 @@ function SidebarContent() {
       });
 
     return () => {
+      removeChatListener();
+
       if (interval) {
         clearInterval(interval);
       }
+
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
 
       window.removeEventListener("messages-read", handleMessagesRead);
+
       window.removeEventListener(
         "follow-counts-updated",
         handleFollowCountsUpdate,
       );
+
       window.removeEventListener(
         "auth-logout",
         handleAuthLogout as EventListener,
       );
-      window.removeEventListener("new-message-received", handleNewMessage);
     };
   }, []);
 

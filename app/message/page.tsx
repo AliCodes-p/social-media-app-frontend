@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
-import { connectChatSocket, getChatSocket } from "@/lib/chatsocket";
+import { getChatSocket, addChatSocketListener } from "@/lib/chatsocket";
 
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -42,7 +42,7 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
 
   const pathname = usePathname();
-  const socketConnected = useRef(false);
+
   const markingAsRead = useRef(false);
   const selectedConversationRef = useRef<Conversation | null>(null);
   const currentUserIdRef = useRef<number>(0);
@@ -89,181 +89,133 @@ export default function MessagesPage() {
   }
 
   useEffect(() => {
-    if (!currentUserId || socketConnected.current) return;
+    const removeChatListener = addChatSocketListener((data) => {
+      // -----------------------------
+      // Handle read receipts
+      // -----------------------------
+      if (data.type === "read_receipt") {
+        setMessages((prev) =>
+          prev.map((m) =>
+            Number(m.id) === Number(data.message_id)
+              ? {
+                  ...m,
+                  status: "read",
+                }
+              : m,
+          ),
+        );
 
-    let socket: WebSocket | null = null;
+        return;
+      }
 
-    async function initSocket() {
-      try {
-        socket = await connectChatSocket(currentUserId);
+      const isOnMessagePage = pathnameRef.current === "/message";
 
-        socket.onopen = () => {
-          console.log("WebSocket connected");
-        };
+      const currentConv = isOnMessagePage
+        ? selectedConversationRef.current
+        : null;
 
-        socket.onmessage = (event) => {
-          const data = JSON.parse(event.data);
+      const currentUser = currentUserIdRef.current;
 
-          // -----------------------------
-          // Handle read receipts
-          // -----------------------------
-          if (data.type === "read_receipt") {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === data.message_id
-                  ? {
-                      ...m,
-                      status: "read" as const,
-                    }
-                  : m,
-              ),
-            );
+      // -----------------------------
+      // Update conversation sidebar
+      // -----------------------------
+      setConversations((prev) => {
+        const existing = prev.find((c) => c.id === data.conversation_id);
 
-            return;
-          }
-
-          const isOnMessagePage = pathnameRef.current === "/message";
-
-          const currentConv = isOnMessagePage
-            ? selectedConversationRef.current
-            : null;
-
-          const currentUser = currentUserIdRef.current;
-          const isUnreadMessage =
-            data.sender_id !== currentUser &&
-            currentConv?.id !== data.conversation_id;
-
-          if (isUnreadMessage) {
-            console.log("Dispatching new message notification");
-            window.dispatchEvent(new Event("new-message-received"));
-          }
-
-          // -----------------------------
-          // Update conversation sidebar
-          // -----------------------------
-          setConversations((prev) => {
-            const existing = prev.find((c) => c.id === data.conversation_id);
-
-            if (!existing) {
-              // reload conversations if this chat is not in sidebar
-              getConversations().then((updated) => {
-                setConversations(updated);
-              });
-
-              return prev;
-            }
-
-            const updated = {
-              ...existing,
-              last_message: {
-                content: data.content,
-                created_at: data.created_at,
-              },
-              unread_count:
-                data.sender_id !== currentUser &&
-                currentConv?.id !== data.conversation_id
-                  ? existing.unread_count + 1
-                  : existing.unread_count,
-            };
-
-            return [
-              updated,
-              ...prev.filter((c) => c.id !== data.conversation_id),
-            ];
+        if (!existing) {
+          getConversations().then((updated) => {
+            setConversations(updated);
           });
 
-          // -----------------------------
-          // Update opened chat messages
-          // -----------------------------
-          if (currentConv && currentConv.id === data.conversation_id) {
-            setMessages((prev) => {
-              // prevent duplicate message
-              if (prev.some((m) => m.id === data.id)) {
-                return prev;
-              }
+          return prev;
+        }
 
-              // replace optimistic message
-              if (data.sender_id === currentUser) {
-                const optimisticIndex = prev.findIndex(
-                  (m) =>
-                    m.sender_id === currentUser &&
-                    m.content === data.content &&
-                    m.id > 1000000000000,
-                );
+        const updated = {
+          ...existing,
 
-                if (optimisticIndex !== -1) {
-                  const updated = [...prev];
+          last_message: {
+            content: data.content,
+            created_at: data.created_at,
+          },
 
-                  updated[optimisticIndex] = data;
+          unread_count:
+            data.sender_id !== currentUser &&
+            currentConv?.id !== data.conversation_id
+              ? existing.unread_count + 1
+              : existing.unread_count,
+        };
 
-                  return updated;
-                }
-              }
+        return [updated, ...prev.filter((c) => c.id !== data.conversation_id)];
+      });
 
-              // incoming message
-              return [...prev, data];
-            });
+      // -----------------------------
+      // Update opened chat messages
+      // -----------------------------
+      if (currentConv && currentConv.id === data.conversation_id) {
+        setMessages((prev) => {
+          // prevent duplicates
+          if (prev.some((m) => Number(m.id) === Number(data.id))) {
+            return prev;
+          }
 
-            // -----------------------------
-            // Mark message as read
-            // -----------------------------
-            if (data.sender_id !== currentUser && !markingAsRead.current) {
-              markingAsRead.current = true;
+          // replace optimistic message
+          if (data.sender_id === currentUser) {
+            const optimisticIndex = prev.findIndex(
+              (m) =>
+                m.sender_id === currentUser &&
+                m.content === data.content &&
+                m.id > 1000000000000,
+            );
 
-              markMessagesAsRead(currentConv.id)
-                .then(() => {
-                  markingAsRead.current = false;
+            if (optimisticIndex !== -1) {
+              const updated = [...prev];
 
-                  setConversations((prev) =>
-                    prev.map((conv) =>
-                      conv.id === currentConv.id
-                        ? {
-                            ...conv,
-                            unread_count: 0,
-                          }
-                        : conv,
-                    ),
-                  );
-                })
-                .catch(() => {
-                  markingAsRead.current = false;
-                });
+              const oldMessage = updated[optimisticIndex];
+
+              updated[optimisticIndex] = {
+                ...data,
+                tempId: oldMessage.tempId,
+              };
+
+              return updated;
             }
           }
-        };
 
-        socket.onclose = () => {
-          socketConnected.current = false;
+          return [...prev, data];
+        });
 
-          console.log("WebSocket disconnected");
-        };
+        // -----------------------------
+        // Mark incoming messages read
+        // -----------------------------
+        if (data.sender_id !== currentUser && !markingAsRead.current) {
+          markingAsRead.current = true;
 
-        socket.onerror = (error) => {
-          console.error("WebSocket error:", error);
-        };
+          markMessagesAsRead(currentConv.id)
+            .then(() => {
+              markingAsRead.current = false;
 
-        socketConnected.current = true;
-      } catch (error) {
-        console.error("WebSocket initialization failed:", error);
-
-        socketConnected.current = false;
+              setConversations((prev) =>
+                prev.map((conv) =>
+                  conv.id === currentConv.id
+                    ? {
+                        ...conv,
+                        unread_count: 0,
+                      }
+                    : conv,
+                ),
+              );
+            })
+            .catch(() => {
+              markingAsRead.current = false;
+            });
+        }
       }
-    }
-
-    initSocket();
+    });
 
     return () => {
-      socketConnected.current = false;
-
-      if (socket) {
-        socket.onmessage = null;
-        socket.onclose = null;
-        socket.onerror = null;
-        socket.close();
-        socket = null;
-      }
+      removeChatListener();
     };
-  }, [currentUserId]);
+  }, []);
 
   async function selectConversation(conversation: Conversation) {
     setSelectedConversation(conversation);

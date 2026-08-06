@@ -1,5 +1,17 @@
 let socket: WebSocket | null = null;
 
+type SocketListener = (data: any) => void;
+
+const listeners = new Set<SocketListener>();
+
+export function addChatSocketListener(callback: SocketListener) {
+  listeners.add(callback);
+
+  return () => {
+    listeners.delete(callback);
+  };
+}
+
 export async function connectChatSocket(userId: number) {
   if (
     socket &&
@@ -21,8 +33,6 @@ export async function connectChatSocket(userId: number) {
 
   const socketUrl = `wss://socialsphereb.duckdns.org/chat/ws?token=${data.token}`;
 
-  console.log("Connecting WebSocket:", socketUrl);
-
   socket = new WebSocket(socketUrl);
 
   socket.onopen = () => {
@@ -31,7 +41,10 @@ export async function connectChatSocket(userId: number) {
 
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    console.log("Received:", data);
+
+    listeners.forEach((listener) => {
+      listener(data);
+    });
   };
 
   socket.onerror = (error) => {
@@ -58,6 +71,7 @@ export function getChatSocket() {
 export function disconnectChatSocket() {
   if (socket) {
     socket.close();
+
     socket = null;
   }
 }
