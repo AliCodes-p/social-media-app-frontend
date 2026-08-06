@@ -208,7 +208,7 @@ export function getAllUsers() {
 // =========================
 
 export function getFeed(limit = 10, offset = 0) {
-  return apiRequest<FeedPage>(`/feed/?limit=${limit}&offset=${offset}`);
+  return apiRequest<FeedPage>(`/feed?limit=${limit}&offset=${offset}`);
 }
 // =========================
 // POSTS
