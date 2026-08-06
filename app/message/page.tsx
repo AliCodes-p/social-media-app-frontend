@@ -136,16 +136,21 @@ export default function MessagesPage() {
           setConversations((prev) => {
             const existing = prev.find((c) => c.id === data.conversation_id);
 
-            if (!existing) return prev;
+            if (!existing) {
+              // reload conversations if this chat is not in sidebar
+              getConversations().then((updated) => {
+                setConversations(updated);
+              });
+
+              return prev;
+            }
 
             const updated = {
               ...existing,
-
               last_message: {
                 content: data.content,
                 created_at: data.created_at,
               },
-
               unread_count:
                 data.sender_id !== currentUser &&
                 currentConv?.id !== data.conversation_id
