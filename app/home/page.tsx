@@ -349,7 +349,7 @@ export default function HomePage() {
         if (alreadyVisible) {
           return applySharedByMe(
             base.map((p) =>
-              p.type === "post" && (p.post_id ?? p.id) === postId
+              (p.post_id ?? p.id) === postId
                 ? { ...p, sharedByMe: true }
                 : p,
             ),
@@ -361,7 +361,7 @@ export default function HomePage() {
           ...post,
           type: "share",
           feedItemId: `share_${share.id}`,
-          sharedByMe: false,
+          sharedByMe: true,
           sharedFrom: {
             sharedByUserId: currentUser.id,
             author: currentUser.username,
@@ -372,7 +372,13 @@ export default function HomePage() {
           time: new Date(share.created_at + "Z").toLocaleString(),
         };
 
-        return applySharedByMe([shareEntry, ...base], currentUser.id);
+        const updatedBase = base.map((p) =>
+          (p.post_id ?? p.id) === postId
+            ? { ...p, sharedByMe: true }
+            : p
+        );
+
+        return applySharedByMe([shareEntry, ...updatedBase], currentUser.id);
       });
 
       showToast("Post shared");
@@ -390,25 +396,27 @@ export default function HomePage() {
     try {
       await unsharePost(postId);
 
-      setPosts((prev) =>
-        applySharedByMe(
-          prev
-            .filter(
-              (p) =>
-                !(
-                  p.type === "share" &&
-                  p.sharedFrom?.sharedByUserId === currentUser.id &&
-                  (p.post_id ?? p.id) === postId
-                ),
-            )
-            .map((p) =>
-              p.type === "post" && (p.post_id ?? p.id) === postId
-                ? { ...p, sharedByMe: false }
-                : p,
-            ),
+      setPosts((prev) => {
+        const shareRow = prev.find(
+          (p) =>
+            p.type === "share" &&
+            p.sharedFrom?.sharedByUserId === currentUser.id &&
+            (p.post_id ?? p.id) === postId,
+        );
+
+        const filtered = shareRow
+          ? prev.filter((p) => p.feedItemId !== shareRow.feedItemId)
+          : prev;
+
+        return applySharedByMe(
+          filtered.map((p) =>
+            (p.post_id ?? p.id) === postId
+              ? { ...p, sharedByMe: false }
+              : p,
+          ),
           currentUser.id,
-        ),
-      );
+        );
+      });
 
       showToast("Post unshared");
     } catch {

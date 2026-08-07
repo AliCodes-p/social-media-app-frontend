@@ -7,6 +7,7 @@ export function feedPostToPost(
   currentUserId: number,
 ): Post {
   const user = usersMap[feed.user_id];
+  const sharer = feed.shared_by_user_id !== null ? usersMap[feed.shared_by_user_id] : undefined;
 
   return {
     id: feed.post_id,
@@ -38,9 +39,9 @@ export function feedPostToPost(
       feed.type === "share" && feed.shared_by_user_id !== null
         ? {
             sharedByUserId: feed.shared_by_user_id,
-            author: user?.username ?? "Unknown",
-            handle: `@${user?.username ?? "user"}`,
-            avatarUrl: user?.avatar_url ?? undefined,
+            author: sharer?.username ?? "Unknown",
+            handle: `@${sharer?.username ?? "user"}`,
+            avatarUrl: sharer?.avatar_url ?? undefined,
             avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
           }
         : undefined,
@@ -58,11 +59,10 @@ export function applySharedByMe(posts: Post[], currentUserId: number): Post[] {
       .map((p) => p.post_id ?? p.id),
   );
 
-  return posts.map((p) =>
-    p.type === "post"
-      ? { ...p, sharedByMe: sharedPostIds.has(p.post_id ?? p.id) }
-      : p,
-  );
+  return posts.map((p) => ({
+    ...p,
+    sharedByMe: sharedPostIds.has(p.post_id ?? p.id),
+  }));
 }
 
 export function buildUsersMap(
