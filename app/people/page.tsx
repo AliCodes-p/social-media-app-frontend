@@ -6,6 +6,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import RightSidebar from "@/components/RightSidebar";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 import { getAllUsers, getCurrentUser } from "@/lib/api";
 import { UserCardResponse } from "@/lib/types";
@@ -90,10 +91,10 @@ export default function PeoplePage() {
                     className="flex items-center justify-between p-4 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] transition"
                   >
                     <div className="flex items-center gap-4">
-                      <img
-                        src={user.avatar_url ?? "/default-avatar.png"}
-                        className="w-14 h-14 rounded-full object-cover"
-                        alt={user.username}
+                      <UserAvatar
+                        username={user.username}
+                        avatarUrl={user.avatar_url}
+                        size={56}
                       />
 
                       <div>

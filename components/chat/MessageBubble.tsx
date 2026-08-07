@@ -1,6 +1,7 @@
 "use client";
 
 import { Message, Conversation } from "@/lib/types";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 interface MessageBubbleProps {
   message: Message;
@@ -22,10 +23,10 @@ export default function MessageBubble({
       }`}
     >
       {!isMine && (
-        <img
-          src={conversation?.other_user.avatar_url || "/default-avatar.png"}
-          alt="avatar"
-          className="w-8 h-8 rounded-full object-cover shrink-0"
+        <UserAvatar
+          username={conversation?.other_user.username ?? "U"}
+          avatarUrl={conversation?.other_user.avatar_url}
+          size={32}
         />
       )}
 

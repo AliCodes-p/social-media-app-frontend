@@ -85,6 +85,7 @@ export default function HomePage() {
   const [currentUser, setCurrentUser] = useState<{
     id: number;
     username: string;
+    avatar_url: string | null;
   } | null>(null);
   const [usersMap, setUsersMap] = useState<Record<number, UserCardResponse>>(
     {},
@@ -220,6 +221,7 @@ export default function HomePage() {
           avatarColor: "#7C3AED",
           content: c.content,
           time: new Date(c.created_at).toLocaleDateString(),
+          avatarUrl: commentUser?.avatar_url ?? undefined,
         };
       });
       setPosts((prev) =>
@@ -520,6 +522,7 @@ export default function HomePage() {
               <PostComposer
                 allowImageUpload={true}
                 avatarFallback={currentUser?.username?.charAt(0) ?? "U"}
+                avatarUrl={currentUser?.avatar_url}
                 onPostSubmit={handlePostSubmit}
               />
 
@@ -530,6 +533,7 @@ export default function HomePage() {
                 loadingMore={loadingMore}
                 currentUserId={currentUser?.id}
                 currentUserInitial={currentUser?.username?.charAt(0) ?? "U"}
+                currentUserAvatarUrl={currentUser?.avatar_url}
                 onLike={toggleLike}
                 onShare={handleSharePost}
                 onUnshare={handleUnsharePost}

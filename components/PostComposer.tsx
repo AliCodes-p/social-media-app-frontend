@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { Image as ImageIcon, X, Smile } from "lucide-react";
+import UserAvatar from "./ui/UserAvatar";
 
 interface PostComposerProps {
   avatarUrl?: string | null;
@@ -76,16 +77,11 @@ export default function PostComposer({
     >
       <div className="flex gap-4 px-5 pt-5 pb-3">
         {/* Avatar */}
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 overflow-hidden ring-2 ring-[#EEEFFE]"
-          style={{ background: "linear-gradient(135deg, #5B5CEB, #7879F1)" }}
-        >
-          {avatarUrl ? (
-            <Image src={avatarUrl} alt="Avatar" fill className="object-cover" />
-          ) : (
-            initLetter
-          )}
-        </div>
+        <UserAvatar
+          username={avatarFallback}
+          avatarUrl={avatarUrl}
+          size={40}
+        />
 
         {/* Textarea */}
         <div className="flex-1 min-w-0">

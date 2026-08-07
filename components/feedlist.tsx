@@ -13,6 +13,7 @@ interface FeedListProps {
 
   currentUserId?: number;
   currentUserInitial: string;
+  currentUserAvatarUrl?: string | null;
 
   onLike: (id: number) => void;
   onShare: (post: Post) => void;
@@ -35,6 +36,7 @@ export default function FeedList({
 
   currentUserId,
   currentUserInitial,
+  currentUserAvatarUrl,
 
   onLike,
   onShare,
@@ -81,6 +83,7 @@ export default function FeedList({
             post={post}
             currentUserId={currentUserId}
             currentUserInitial={currentUserInitial}
+            currentUserAvatarUrl={currentUserAvatarUrl}
             onLike={onLike}
             onShare={onShare}
             onUnshare={onUnshare}

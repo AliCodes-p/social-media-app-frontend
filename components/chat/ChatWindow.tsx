@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { Message, Conversation } from "@/lib/types";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 interface ChatWindowProps {
   messages: Message[];
@@ -35,10 +36,10 @@ export default function ChatWindow({
       {/* Header */}
       {conversation && (
         <div className="flex items-center gap-3 p-4 border-b border-[#E5E7EB] bg-white z-10">
-          <img
-            src={conversation.other_user.avatar_url || "/default-avatar.png"}
-            alt={conversation.other_user.username}
-            className="w-10 h-10 rounded-full object-cover"
+          <UserAvatar
+            username={conversation.other_user.username}
+            avatarUrl={conversation.other_user.avatar_url}
+            size={40}
           />
 
           <div>

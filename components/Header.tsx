@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { getCurrentUser, logout } from "@/lib/api";
 import { Home, PlusCircle, User, LogOut, Search } from "lucide-react";
 import { showConfirm } from "@/lib/confirm";
+import UserAvatar from "./ui/UserAvatar";
 
 function SphereIcon({ size = 18 }: { size?: number }) {
   return (
@@ -180,22 +181,11 @@ export default function Header() {
                 href={`/profile/${user.username}`}
                 className="flex items-center gap-2.5 group"
               >
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden ring-2 ring-[#EEEFFE]"
-                  style={{
-                    background: "linear-gradient(135deg, #5B5CEB, #7879F1)",
-                  }}
-                >
-                  {user.avatar_url ? (
-                    <img
-                      src={user.avatar_url}
-                      alt={user.username}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    initials
-                  )}
-                </div>
+                <UserAvatar
+                  username={user.username}
+                  avatarUrl={user.avatar_url}
+                  size={32}
+                />
                 <span className="text-[13px] font-bold text-[#0F0F1A] hover:text-[#5B5CEB] transition truncate max-w-[80px] hidden lg:inline">
                   {user.username}
                 </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Conversation, UserCardResponse } from "@/lib/types";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -48,10 +49,10 @@ export default function ConversationList({
                 onClick={() => onStartConversation(friend)}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#F8F8FA] transition min-w-0"
               >
-                <img
-                  src={friend.avatar_url ?? "/default-avatar.png"}
-                  alt={friend.username}
-                  className="w-11 h-11 rounded-full object-cover shrink-0"
+                <UserAvatar
+                  username={friend.username}
+                  avatarUrl={friend.avatar_url}
+                  size={44}
                 />
 
                 <div className="text-left flex-1 min-w-0">
@@ -81,10 +82,10 @@ export default function ConversationList({
                 : "hover:bg-[#F8F8FA]"
             }`}
           >
-            <img
-              src={conversation.other_user.avatar_url ?? "/default-avatar.png"}
-              alt={conversation.other_user.username}
-              className="w-12 h-12 rounded-full object-cover shrink-0"
+            <UserAvatar
+              username={conversation.other_user.username}
+              avatarUrl={conversation.other_user.avatar_url}
+              size={48}
             />
 
             {/* User + Last Message */}

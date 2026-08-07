@@ -3,12 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { UserPlus, Activity, Clock } from "lucide-react";
+import UserAvatar from "./ui/UserAvatar";
 
 interface SuggestedUser {
   id: number;
   name: string;
   username: string;
-  avatar_url: string;
+  avatar_url: string | null;
 }
 
 interface TrendingTopic {
@@ -133,23 +134,11 @@ export default function RightSidebar({
                     href={`/profile/${user.username}`}
                     className="flex items-center gap-2.5 min-w-0 flex-1"
                   >
-                    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-[#EEEFFE]"
-                      style={{ background: "linear-gradient(135deg, #5B5CEB, #7879F1)" }}
-                    >
-                      {user.avatar_url ? (
-                        <Image
-                          src={user.avatar_url}
-                          alt={user.name}
-                          fill
-                          className="object-cover"
-                          sizes="36px"
-                        />
-                      ) : (
-                        <span className="flex h-full w-full items-center justify-center text-[13px] font-bold text-white">
-                          {user.username.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
+                    <UserAvatar
+                      username={user.username}
+                      avatarUrl={user.avatar_url}
+                      size={36}
+                    />
 
                     <div className="min-w-0">
                       <p className="truncate text-[13px] font-semibold text-[#0F0F1A] group-hover:text-[#5B5CEB] transition-colors leading-tight">

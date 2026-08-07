@@ -22,6 +22,7 @@ import {
   Shield,
 } from "lucide-react";
 import { showConfirm } from "@/lib/confirm";
+import UserAvatar from "./ui/UserAvatar";
 interface NavItem {
   label: string;
   href: string;
@@ -288,22 +289,12 @@ function SidebarContent() {
           <div className="px-5 pb-5 pt-0 relative flex flex-col items-center text-center">
             {/* Circular Avatar */}
             <div className="relative -mt-8 mb-3 z-10">
-              <div
-                className="w-16 h-16 rounded-full border-4 border-white flex items-center justify-center text-xl font-bold text-white overflow-hidden shadow-sm"
-                style={{
-                  background: "linear-gradient(135deg, #5B5CEB, #7879F1)",
-                }}
-              >
-                {profile?.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={user.username}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  initials
-                )}
-              </div>
+              <UserAvatar
+                username={user.username}
+                avatarUrl={profile?.avatar_url}
+                size={64}
+                className="border-4 border-white shadow-sm"
+              />
             </div>
 
             {/* Name & Username */}

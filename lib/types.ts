@@ -6,6 +6,7 @@ export interface Comment {
   avatarColor: string;
   content: string;
   time: string;
+  avatarUrl?: string;
 }
 
 export interface SharedFrom {

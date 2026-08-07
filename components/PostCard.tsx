@@ -16,10 +16,12 @@ import {
   Send,
 } from "lucide-react";
 import { Post, Comment } from "@/lib/types";
+import UserAvatar from "./ui/UserAvatar";
 
 interface PostCardProps {
   post: Post;
   currentUserInitial?: string;
+  currentUserAvatarUrl?: string | null;
   currentUserId?: number;
   onLike: (id: number) => void;
   onShare?: (post: Post) => void;
@@ -39,6 +41,7 @@ interface PostCardProps {
 export default function PostCard({
   post,
   currentUserInitial = "U",
+  currentUserAvatarUrl,
   currentUserId,
   onLike,
   onShare,
@@ -132,17 +135,11 @@ export default function PostCard({
           <div className="flex items-center gap-3.5">
             {/* Avatar */}
             <Link href={`/profile/${authorUsername}`} className="shrink-0">
-              <div
-                className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white ring-2 ring-[#EEEFFE]"
-                style={{
-                  background:
-                    post.sharedFrom?.avatarColor ??
-                    post.avatarColor ??
-                    "linear-gradient(135deg,#5B5CEB,#7879F1)",
-                }}
-              >
-                {authorInit}
-              </div>
+              <UserAvatar
+                username={authorName}
+                avatarUrl={post.sharedFrom?.avatarUrl ?? post.avatarUrl}
+                size={44}
+              />
             </Link>
 
             {/* Name + handle + time */}
@@ -399,12 +396,11 @@ export default function PostCard({
             {post.comments.map((comment) => (
               <div key={comment.id} className="flex gap-3 group items-start">
                 {/* Comment avatar */}
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-                  style={{ background: comment.avatarColor ?? "#5B5CEB" }}
-                >
-                  {comment.author.charAt(0).toUpperCase()}
-                </div>
+                <UserAvatar
+                  username={comment.author}
+                  avatarUrl={comment.avatarUrl}
+                  size={28}
+                />
 
                 <div className="flex-1 min-w-0 bg-[#F7F8FC] rounded-xl px-3.5 py-2.5">
                   <div className="flex items-center justify-between gap-2 mb-1">
@@ -482,12 +478,11 @@ export default function PostCard({
           {/* Add comment input */}
           {onAddComment && (
             <div className="flex gap-3 items-center">
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-                style={{ background: "linear-gradient(135deg, #5B5CEB, #7879F1)" }}
-              >
-                {currentUserInitial.charAt(0).toUpperCase()}
-              </div>
+              <UserAvatar
+                username={currentUserInitial}
+                avatarUrl={currentUserAvatarUrl}
+                size={28}
+              />
               <div className="flex-1 flex items-center gap-2 bg-[#F7F8FC] rounded-full px-4 border border-[#E8E9F0] focus-within:border-[#5B5CEB] focus-within:ring-[3px] focus-within:ring-[#5B5CEB]/15 transition">
                 <input
                   value={commentDraft}
