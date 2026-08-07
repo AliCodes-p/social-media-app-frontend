@@ -1,9 +1,7 @@
 export type OAuthProvider = "google" | "github";
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://socialsphereb.duckdns.org";
 
 export function getOAuthStartUrl(provider: OAuthProvider): string {
-  return `${BACKEND_URL}/auth/oauth/${provider}`;
+  return `/backend/auth/oauth/${provider}`;
 }
 
 export function startOAuth(provider: OAuthProvider): void {
