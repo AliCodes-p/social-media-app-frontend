@@ -14,10 +14,13 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    const backendUrl =
+      process.env.BACKEND_URL ?? "https://socialsphereb.duckdns.org";
+
     return [
       {
         source: "/backend/:path*",
-        destination: "https://socialsphereb.duckdns.org/:path*",
+        destination: `${backendUrl.replace(/\/$/, "")}/:path*`,
       },
     ];
   },
