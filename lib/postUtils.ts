@@ -35,13 +35,12 @@ export function feedPostToPost(
     isOwner: feed.user_id === currentUserId,
 
     sharedFrom:
-      feed.type === "share"
+      feed.type === "share" && feed.shared_by_user_id !== null
         ? {
             sharedByUserId: feed.shared_by_user_id,
-            author: usersMap[feed.shared_by_user_id!]?.username ?? "Unknown",
-            handle: `@${usersMap[feed.shared_by_user_id!]?.username ?? "user"}`,
-            avatarUrl:
-              usersMap[feed.shared_by_user_id!]?.avatar_url ?? undefined, // <-- ADD THIS
+            author: user?.username ?? "Unknown",
+            handle: `@${user?.username ?? "user"}`,
+            avatarUrl: user?.avatar_url ?? undefined,
             avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
           }
         : undefined,
@@ -54,8 +53,7 @@ export function applySharedByMe(posts: Post[], currentUserId: number): Post[] {
     posts
       .filter(
         (p) =>
-          p.type === "share" &&
-          p.sharedFrom?.sharedByUserId === currentUserId,
+          p.type === "share" && p.sharedFrom?.sharedByUserId === currentUserId,
       )
       .map((p) => p.post_id ?? p.id),
   );

@@ -21,6 +21,7 @@ export interface Post {
   id: number;
   /** Unique feed row id from backend (`post_12`, `share_34`). */
   feedItemId: string;
+  avatarUrl?: string;
 
   type?: "post" | "share";
   post_id?: number;
