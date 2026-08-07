@@ -76,7 +76,7 @@ export default function FeedList({
   return (
     <>
       {posts.map((post) => (
-        <div key={`${post.type}-${post.id}`} className="animate-card-in">
+        <div key={post.feedItemId} className="animate-card-in">
           <PostCard
             post={post}
             currentUserId={currentUserId}

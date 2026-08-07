@@ -358,8 +358,8 @@ export function unlikePost(postId: number) {
 // SHARES
 // =========================
 
-export async function sharePost(postId: number) {
-  return apiRequest(`/posts/${postId}/share`, {
+export function sharePost(postId: number) {
+  return apiRequest<ShareResponse>(`/posts/${postId}/share`, {
     method: "POST",
   });
 }

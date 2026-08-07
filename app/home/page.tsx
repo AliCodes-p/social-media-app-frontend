@@ -23,6 +23,7 @@ import {
   buildUsersMap,
   extractHashtags,
   feedPostToPost,
+  applySharedByMe,
 } from "@/lib/postUtils";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -109,7 +110,10 @@ export default function HomePage() {
     const feed = feedPage.items;
 
     setPosts(
-      feed.map((post) => feedPostToPost(post, usersMap, currentUser.id)),
+      applySharedByMe(
+        feed.map((post) => feedPostToPost(post, usersMap, currentUser.id)),
+        currentUser.id,
+      ),
     );
 
     setOffset(LIMIT);
@@ -145,7 +149,10 @@ export default function HomePage() {
           })),
         );
 
-        const mapped = feed.map((post) => feedPostToPost(post, lookup, me.id));
+        const mapped = applySharedByMe(
+          feed.map((post) => feedPostToPost(post, lookup, me.id)),
+          me.id,
+        );
         setPosts(mapped);
       } catch (error) {
         console.error("Failed to load feed:", error);
@@ -323,12 +330,51 @@ export default function HomePage() {
   };
 
   const handleSharePost = async (post: Post) => {
-    console.log("Sharing post:", post);
-    console.log("id:", post.id);
-    console.log("post_id:", post.post_id);
+    if (!currentUser) return;
+
+    const postId = post.post_id ?? post.id;
+
     try {
-      await sharePost(post.post_id!);
-      await refreshFeed();
+      const share = await sharePost(postId);
+
+      setPosts((prev) => {
+        const base = applySharedByMe(prev, currentUser.id);
+        const alreadyVisible = base.some(
+          (p) =>
+            p.type === "share" &&
+            p.sharedFrom?.sharedByUserId === currentUser.id &&
+            (p.post_id ?? p.id) === postId,
+        );
+
+        if (alreadyVisible) {
+          return applySharedByMe(
+            base.map((p) =>
+              p.type === "post" && (p.post_id ?? p.id) === postId
+                ? { ...p, sharedByMe: true }
+                : p,
+            ),
+            currentUser.id,
+          );
+        }
+
+        const shareEntry: Post = {
+          ...post,
+          type: "share",
+          feedItemId: `share_${share.id}`,
+          sharedByMe: false,
+          sharedFrom: {
+            sharedByUserId: currentUser.id,
+            author: currentUser.username,
+            handle: `@${currentUser.username}`,
+            avatarUrl: usersMap[currentUser.id]?.avatar_url ?? undefined,
+            avatarColor: "linear-gradient(135deg,#7C3AED,#6366F1)",
+          },
+          time: new Date(share.created_at + "Z").toLocaleString(),
+        };
+
+        return applySharedByMe([shareEntry, ...base], currentUser.id);
+      });
+
       showToast("Post shared");
     } catch (err) {
       console.error(err);
@@ -337,9 +383,33 @@ export default function HomePage() {
   };
 
   const handleUnsharePost = async (post: Post) => {
+    if (!currentUser) return;
+
+    const postId = post.post_id ?? post.id;
+
     try {
-      await unsharePost(Number(post.post_id));
-      await refreshFeed();
+      await unsharePost(postId);
+
+      setPosts((prev) =>
+        applySharedByMe(
+          prev
+            .filter(
+              (p) =>
+                !(
+                  p.type === "share" &&
+                  p.sharedFrom?.sharedByUserId === currentUser.id &&
+                  (p.post_id ?? p.id) === postId
+                ),
+            )
+            .map((p) =>
+              p.type === "post" && (p.post_id ?? p.id) === postId
+                ? { ...p, sharedByMe: false }
+                : p,
+            ),
+          currentUser.id,
+        ),
+      );
+
       showToast("Post unshared");
     } catch {
       showToast("Failed to unshare post", "error");
@@ -355,17 +425,18 @@ export default function HomePage() {
 
       const feedPage = await getFeed(LIMIT, offset);
 
-      const mapped = feedPage.items.map((post) =>
-        feedPostToPost(post, usersMap, currentUser.id),
+      const mapped = applySharedByMe(
+        feedPage.items.map((post) =>
+          feedPostToPost(post, usersMap, currentUser.id),
+        ),
+        currentUser.id,
       );
 
       setPosts((prev) => {
-        const existingIds = new Set(
-          prev.map((post) => `${post.type}-${post.id}`),
-        );
+        const existingIds = new Set(prev.map((post) => post.feedItemId));
 
         const uniqueNewPosts = mapped.filter(
-          (post) => !existingIds.has(`${post.type}-${post.id}`),
+          (post) => !existingIds.has(post.feedItemId),
         );
 
         return [...prev, ...uniqueNewPosts];

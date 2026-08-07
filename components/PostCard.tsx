@@ -94,6 +94,10 @@ export default function PostCard({
     setCommentEditDraft("");
   };
 
+  const resharedByMe =
+    post.sharedByMe ||
+    post.sharedFrom?.sharedByUserId === currentUserId;
+
   const authorUsername = (post.sharedFrom?.handle ?? post.handle).replace("@", "");
   const authorInit     = (post.sharedFrom?.author ?? post.author).charAt(0).toUpperCase();
   const authorName     = post.sharedFrom?.author ?? post.author;
@@ -344,17 +348,17 @@ export default function PostCard({
               <div className="w-px h-5 bg-[#EFF0F5]" />
               <button
                 onClick={() => {
-                  if (post.sharedFrom && onUnshare) onUnshare(post);
+                  if (resharedByMe && onUnshare) onUnshare(post);
                   else if (onShare) onShare(post);
                 }}
                 className={`
                   flex flex-1 items-center justify-center gap-2 py-3 text-[13px] font-medium
                   transition-all duration-150 hover:bg-[#EEEFFE] active:scale-95 rounded-none
-                  ${post.sharedFrom ? "text-[#5B5CEB]" : "text-[#9B9BB0] hover:text-[#5B5CEB]"}
+                  ${resharedByMe ? "text-[#5B5CEB]" : "text-[#9B9BB0] hover:text-[#5B5CEB]"}
                 `}
               >
                 <Share2 className="w-[17px] h-[17px]" />
-                <span>{post.sharedFrom ? "Reshared" : "Reshare"}</span>
+                <span>{resharedByMe ? "Reshared" : "Reshare"}</span>
               </button>
             </>
           )}

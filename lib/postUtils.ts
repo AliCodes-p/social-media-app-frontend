@@ -1,14 +1,16 @@
 import { FeedPost, UserCardResponse, Post } from "./types";
+
 /*Converts backend post data into the format required by frontend UI components.*/
 export function feedPostToPost(
-  feed: any,
-  usersMap: any,
+  feed: FeedPost,
+  usersMap: Record<number, UserCardResponse>,
   currentUserId: number,
-) {
+): Post {
   const user = usersMap[feed.user_id];
 
   return {
     id: feed.post_id,
+    feedItemId: feed.id,
 
     type: feed.type ?? "post",
     post_id: feed.post_id,
@@ -45,6 +47,26 @@ export function feedPostToPost(
         : undefined,
   };
 }
+
+/** Mark original post rows when the current user has shared that post. */
+export function applySharedByMe(posts: Post[], currentUserId: number): Post[] {
+  const sharedPostIds = new Set(
+    posts
+      .filter(
+        (p) =>
+          p.type === "share" &&
+          p.sharedFrom?.sharedByUserId === currentUserId,
+      )
+      .map((p) => p.post_id ?? p.id),
+  );
+
+  return posts.map((p) =>
+    p.type === "post"
+      ? { ...p, sharedByMe: sharedPostIds.has(p.post_id ?? p.id) }
+      : p,
+  );
+}
+
 export function buildUsersMap(
   users: UserCardResponse[],
 ): Record<number, UserCardResponse> {

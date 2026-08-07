@@ -17,7 +17,10 @@ export interface SharedFrom {
 }
 
 export interface Post {
+  /** Underlying post id (API calls: like, share, comments). */
   id: number;
+  /** Unique feed row id from backend (`post_12`, `share_34`). */
+  feedItemId: string;
 
   type?: "post" | "share";
   post_id?: number;
@@ -33,7 +36,8 @@ export interface Post {
   liked: boolean;
   commentsCount: number;
 
-  shared?: boolean;
+  /** Current user has an active share for this underlying post. */
+  sharedByMe?: boolean;
 
   comments: Comment[];
 
@@ -88,6 +92,7 @@ export interface Message {
 }
 
 export interface FeedPost {
+  id: string;
   post_id: number;
   user_id: number;
   content: string;
