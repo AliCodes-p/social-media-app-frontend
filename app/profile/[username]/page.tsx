@@ -124,6 +124,7 @@ export default function ProfilePage() {
           .map(
             (p): Post => ({
               id: p.post_id,
+              feedItemId: p.id,
               post_id: p.post_id,
               type: p.type ?? "post",
               author: profileData.username,
@@ -194,6 +195,7 @@ export default function ProfilePage() {
         .map(
           (p): Post => ({
             id: p.post_id,
+            feedItemId: p.id,
             post_id: p.post_id,
             type: p.type ?? "post",
             author: user.username,

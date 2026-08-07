@@ -91,6 +91,7 @@ export default function MyProfilePage() {
         .filter((post) => post.user_id === myProfile.id)
         .map((post) => ({
           id: post.post_id,
+          feedItemId: post.id,
           post_id: post.post_id,
           type: post.type ?? "post",
 
@@ -120,6 +121,7 @@ export default function MyProfilePage() {
 
       const mappedArchived: Post[] = archived.map((post) => ({
         id: post.post_id,
+        feedItemId: post.id,
         post_id: post.post_id,
         type: "post",
 
